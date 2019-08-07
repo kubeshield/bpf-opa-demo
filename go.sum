@@ -1,2 +1,4 @@
-github.com/iovisor/gobpf v0.0.0-20190717135640-14e20c7d794b h1:K+pN2uTRs9KEP4p65y41OBDV4HvYpsyXpxDaWCz2Yms=
-github.com/iovisor/gobpf v0.0.0-20190717135640-14e20c7d794b/go.mod h1:+5U5qu5UOu8YJ5oHVLvWKH7/Dr5QNHU7mZ2RfPEeXg8=
+github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
+github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
+github.com/tahsinrahman/gobpf v0.0.0-20190828103435-4226291af08b h1:Af1kgGdr+XTxeWQG8i+xxCxXSeNkRAysZw2Fd4CLBMY=
+github.com/tahsinrahman/gobpf v0.0.0-20190828103435-4226291af08b/go.mod h1:/isSqNewNcgORdnQ2UxnWrAmdOvVsjqrrdNdTSPNK0U=

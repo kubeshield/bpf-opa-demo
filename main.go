@@ -4,101 +4,64 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"unsafe"
 
-	bpf "github.com/iovisor/gobpf/bcc"
+	"github.com/davecgh/go-spew/spew"
+	bpf "github.com/iovisor/gobpf/elf"
 )
 
-type execEvent struct {
-	Pid       uint64
-	TimeStamp uint64
-	Command   [32]byte
+type bpf_output struct {
+	Command string
 }
 
-type eventOutput struct {
-	Pid       uint64
-	TimeStamp uint64
-	Command   string
+type ExecveData struct {
+	Command [64]byte
 }
-
-const source string = `
-
-struct data_t {
-	u32 pid;
-	u64 ts;
-	char command[32];
-};
-
-BPF_PERF_OUTPUT(events);
-
-int probe_execve(struct pt_regs *ctx) {
-	struct data_t data = {};
-
-	data.pid = (bpf_get_current_pid_tgid() >> 32);
-	data.ts = bpf_ktime_get_ns();
-	bpf_get_current_comm(&data.command, sizeof(data.command));
-
-	events.perf_submit(ctx, &data, sizeof(data));
-
-	return 0;
-}
-`
 
 func main() {
-	module := bpf.NewModule(source, nil)
-	kprobe, err := module.LoadKprobe("probe_execve")
+	module := bpf.NewModule("bpf/raw_tracepoint.o")
+	err := module.Load(nil)
 	if err != nil {
-		log.Fatal(err)
+		panic(err)
+	}
+	err = module.AttachRawTracepoint("raw_tracepoint/sys_enter")
+	if err != nil {
+		panic(err)
 	}
 
-	funcName := bpf.GetSyscallFnName("execve")
-
-	err = module.AttachKprobe(funcName, kprobe, -1)
+	bpfEvents := make(chan []byte, 64)
+	lostBPFEvents := make(chan uint64, 1)
+	perfMap, err := bpf.InitPerfMap(module, "my_map", bpfEvents, lostBPFEvents)
 	if err != nil {
-		log.Fatal(err)
-	}
-
-	table := bpf.NewTable(module.TableId("events"), module)
-	channel := make(chan []byte)
-
-	perfMap, err := bpf.InitPerfMap(table, channel)
-	if err != nil {
-		log.Fatal(err)
+		panic(err)
 	}
 
 	sig := make(chan os.Signal)
 
 	go func() {
 		for {
-			data := <-channel
+			select {
+			case data := <-bpfEvents:
+				var execveData ExecveData
+				err = binary.Read(bytes.NewReader(data), binary.LittleEndian, &execveData)
+				if err != nil {
+					log.Println(err)
+				}
+				out := bpf_output{
+					Command: C.GoString((*C.char)(unsafe.Pointer(&execveData.Command))),
+				}
+				spew.Dump(out)
 
-			var event execEvent
-			err = binary.Read(bytes.NewBuffer(data), bpf.GetHostByteOrder(), &event)
-			if err != nil {
-				fmt.Println(err)
+			case count := <-lostBPFEvents:
+				spew.Dump(count)
 			}
-
-			out := eventOutput{
-				Pid:       event.Pid,
-				TimeStamp: event.TimeStamp,
-				Command:   C.GoString((*C.char)(unsafe.Pointer(&event.Command))),
-			}
-
-			jsonData, err := json.Marshal(out)
-			if err != nil {
-				fmt.Println(err)
-			}
-
-			fmt.Println(string(jsonData))
 		}
 
 	}()
 
-	perfMap.Start()
+	perfMap.PollStart()
 	<-sig
-	perfMap.Stop()
+	perfMap.PollStop()
 }
