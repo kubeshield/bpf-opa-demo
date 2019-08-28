@@ -1,67 +1,78 @@
 package main
 
-import "C"
 import (
-	"bytes"
-	"encoding/binary"
-	"log"
-	"os"
+	"strings"
 	"unsafe"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/iovisor/gobpf/pkg/cpuonline"
+
 	bpf "github.com/iovisor/gobpf/elf"
+	"github.com/pkg/errors"
 )
 
-type bpf_output struct {
-	Command string
-}
-
-type ExecveData struct {
-	Command [64]byte
-}
-
 func main() {
-	module := bpf.NewModule("bpf/raw_tracepoint.o")
-	err := module.Load(nil)
-	if err != nil {
-		panic(err)
-	}
-	err = module.AttachRawTracepoint("raw_tracepoint/sys_enter")
+	cpuRange, err := cpuonline.Get()
 	if err != nil {
 		panic(err)
 	}
 
-	bpfEvents := make(chan []byte, 64)
-	lostBPFEvents := make(chan uint64, 1)
-	perfMap, err := bpf.InitPerfMap(module, "my_map", bpfEvents, lostBPFEvents)
+	// 0 indexed, so adding 1
+	noCPU := int(cpuRange[len(cpuRange)-1]) + 1
+
+	err = load_bpf_file(noCPU, "bpf/probe.o")
 	if err != nil {
 		panic(err)
 	}
+}
 
-	sig := make(chan os.Signal)
+func load_bpf_file(noCPU int, filepath string) error {
+	m := bpf.NewModule(filepath)
+	err := m.Load(map[string]bpf.SectionParams{
+		"maps/perf_map": bpf.SectionParams{
+			MapMaxEntries: noCPU,
+		},
+		"maps/frame_scratch_map": bpf.SectionParams{
+			MapMaxEntries: noCPU,
+		},
+		"maps/tmp_scratch_map": bpf.SectionParams{
+			MapMaxEntries: noCPU,
+		},
+		"maps/local_state_map": bpf.SectionParams{
+			MapMaxEntries: noCPU,
+		},
+	})
+	if err != nil {
+		return err
+	}
 
-	go func() {
-		for {
-			select {
-			case data := <-bpfEvents:
-				var execveData ExecveData
-				err = binary.Read(bytes.NewReader(data), binary.LittleEndian, &execveData)
-				if err != nil {
-					log.Println(err)
-				}
-				out := bpf_output{
-					Command: C.GoString((*C.char)(unsafe.Pointer(&execveData.Command))),
-				}
-				spew.Dump(out)
+	progMap := m.Map("tail_map")
+	if progMap == nil {
+		return errors.New("tail map is nil")
+	}
 
-			case count := <-lostBPFEvents:
-				spew.Dump(count)
+	progs := m.RawTracePointPrograms()
+
+	for _, prog := range progs {
+		if strings.Contains(prog.Name, "filler/") {
+			eventName := prog.Name[len("raw_tracepoint/filler/"):]
+			key, found := lookupFillerID(eventName)
+			if !found {
+				return errors.Errorf("filler id not found for program: %v", prog.Name)
+			}
+
+			value := prog.Fd()
+
+			err = m.UpdateElement(progMap, unsafe.Pointer(&key), unsafe.Pointer(&value), 0)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = m.AttachRawTracepoint(prog.Name)
+			if err != nil {
+				return err
 			}
 		}
+	}
 
-	}()
-
-	perfMap.PollStart()
-	<-sig
-	perfMap.PollStop()
+	return nil
 }
