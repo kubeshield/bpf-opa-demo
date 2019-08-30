@@ -1,4 +1,8 @@
+github.com/go-logr/logr v0.1.0 h1:M1Tv3VzNlEHg6uyACnRdtrploV2P7wZqH8BoQMtz0cg=
+github.com/go-logr/logr v0.1.0/go.mod h1:ixOQHD9gLJUVQQ2ZOR7zLEifBX6tGkNJF4QyIY7sIas=
 github.com/pkg/errors v0.8.1 h1:iURUrRGxPUNPdy5/HRSm+Yj6okJ6UtLINN0Q9M4+h3I=
 github.com/pkg/errors v0.8.1/go.mod h1:bwawxfHBFNV+L2hUp1rHADufV3IMtnDRdf1r5NINEl0=
 github.com/tahsinrahman/gobpf v0.0.0-20190828103435-4226291af08b h1:Af1kgGdr+XTxeWQG8i+xxCxXSeNkRAysZw2Fd4CLBMY=
 github.com/tahsinrahman/gobpf v0.0.0-20190828103435-4226291af08b/go.mod h1:/isSqNewNcgORdnQ2UxnWrAmdOvVsjqrrdNdTSPNK0U=
+k8s.io/klog v0.4.0 h1:lCJCxf/LIowc2IGS9TPjWDyXY4nOmdGdfcwwDQCOURQ=
+k8s.io/klog v0.4.0/go.mod h1:4Bi6QPql/J/LkTDqv7R/cd3hPo4k2DG6Ptcz060Ez5I=
