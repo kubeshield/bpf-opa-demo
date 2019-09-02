@@ -2,9 +2,11 @@ package main
 
 import "C"
 import (
+	"os"
 	"strings"
 	"unsafe"
 
+	"github.com/davecgh/go-spew/spew"
 	"k8s.io/klog"
 
 	"github.com/pkg/errors"
@@ -46,6 +48,11 @@ func main() {
 		panic(err)
 	}
 
+	err = readFromPerfMap(module)
+	if err != nil {
+		logger.Error(err, "error reading from perf map")
+		panic(err)
+	}
 }
 
 func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
@@ -130,6 +137,34 @@ func populateSettingsMap(m *elf.Module) error {
 		log.Error(err, "failed to update settings map", "key", key, "settings", settings)
 		return err
 	}
+
+	return nil
+}
+
+func readFromPerfMap(module *elf.Module) error {
+	receiveChan := make(chan []byte)
+	lostChan := make(chan uint64)
+
+	perfMap, err := elf.InitPerfMap(module, "perf_map", receiveChan, lostChan)
+	if err != nil {
+		return err
+	}
+
+	go func() {
+		for {
+			select {
+			case data := <-receiveChan:
+				spew.Dump(data)
+			case data := <-lostChan:
+				spew.Dump(data)
+			}
+		}
+	}()
+
+	perfMap.PollStart()
+
+	sig := make(chan os.Signal)
+	<-sig
 
 	return nil
 }
