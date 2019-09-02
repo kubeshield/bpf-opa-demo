@@ -1,5 +1,6 @@
 package main
 
+import "C"
 import (
 	"strings"
 	"unsafe"
@@ -38,6 +39,13 @@ func main() {
 		logger.Error(err, "failed to populate settings map")
 		panic(err)
 	}
+
+	err = populateSyscallTableMap(module)
+	if err != nil {
+		logger.Error(err, "error populating syscall table map")
+		panic(err)
+	}
+
 }
 
 func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
