@@ -7,13 +7,123 @@ import (
 )
 
 /*
-
+#include <linux/types.h>
+#include <bits/types.h>
 #include <linux/unistd.h>
 
 #define SYSCALL_TABLE_ID0 0
 #define SYSCALL_TABLE_SIZE 512
 
+typedef __uint8_t uint8_t;
+typedef __uint16_t uint16_t;
+typedef __uint32_t uint32_t;
+typedef __uint64_t uint64_t;
+
+typedef __int8_t int8_t;
+typedef __int16_t int16_t;
+typedef __int32_t int32_t;
+typedef __int64_t int64_t;
+
+#define PPM_MAX_AUTOFILL_ARGS (1 << 2)
 #define _packed __attribute__((packed))
+
+
+#define FILLER_LIST_MAPPER(FN)			\
+	FN(sys_autofill)			\
+	FN(sys_generic)				\
+	FN(sys_empty)				\
+	FN(sys_single)				\
+	FN(sys_single_x)			\
+	FN(sys_open_x)				\
+	FN(sys_read_x)				\
+	FN(sys_write_x)				\
+	FN(sys_execve_e)			\
+	FN(proc_startupdate)			\
+	FN(proc_startupdate_2)			\
+	FN(proc_startupdate_3)			\
+	FN(sys_socketpair_x)			\
+	FN(sys_setsockopt_x)			\
+	FN(sys_getsockopt_x)			\
+	FN(sys_connect_x)			\
+	FN(sys_accept4_e)			\
+	FN(sys_accept_x)			\
+	FN(sys_send_e)				\
+	FN(sys_send_x)				\
+	FN(sys_sendto_e)			\
+	FN(sys_sendmsg_e)			\
+	FN(sys_sendmsg_x)			\
+	FN(sys_recv_x)				\
+	FN(sys_recvfrom_x)			\
+	FN(sys_recvmsg_x)			\
+	FN(sys_recvmsg_x_2)			\
+	FN(sys_shutdown_e)			\
+	FN(sys_creat_x)				\
+	FN(sys_pipe_x)				\
+	FN(sys_eventfd_e)			\
+	FN(sys_futex_e)				\
+	FN(sys_lseek_e)				\
+	FN(sys_llseek_e)			\
+	FN(sys_socket_bind_x)			\
+	FN(sys_poll_e)				\
+	FN(sys_poll_x)				\
+	FN(sys_pread64_e)			\
+	FN(sys_preadv64_e)			\
+	FN(sys_writev_e)			\
+	FN(sys_pwrite64_e)			\
+	FN(sys_readv_preadv_x)			\
+	FN(sys_writev_pwritev_x)		\
+	FN(sys_pwritev_e)			\
+	FN(sys_nanosleep_e)			\
+	FN(sys_getrlimit_setrlimit_e)		\
+	FN(sys_getrlimit_setrlrimit_x)		\
+	FN(sys_prlimit_e)			\
+	FN(sys_prlimit_x)			\
+	FN(sched_switch_e)			\
+	FN(sched_drop)				\
+	FN(sys_fcntl_e)				\
+	FN(sys_ptrace_e)			\
+	FN(sys_ptrace_x)			\
+	FN(sys_mmap_e)				\
+	FN(sys_brk_munmap_mmap_x)		\
+	FN(sys_renameat_x)			\
+	FN(sys_symlinkat_x)			\
+	FN(sys_procexit_e)			\
+	FN(sys_sendfile_e)			\
+	FN(sys_sendfile_x)			\
+	FN(sys_quotactl_e)			\
+	FN(sys_quotactl_x)			\
+	FN(sys_sysdigevent_e)			\
+	FN(sys_getresuid_and_gid_x)		\
+	FN(sys_signaldeliver_e)			\
+	FN(sys_pagefault_e)			\
+	FN(sys_setns_e)				\
+	FN(sys_unshare_e)			\
+	FN(sys_flock_e)				\
+	FN(cpu_hotplug_e)			\
+	FN(sys_semop_x)				\
+	FN(sys_semget_e)			\
+	FN(sys_semctl_e)			\
+	FN(sys_ppoll_e)				\
+	FN(sys_mount_e)				\
+	FN(sys_access_e)			\
+	FN(sys_socket_x)			\
+	FN(sys_bpf_x)				\
+	FN(sys_unlinkat_x)			\
+	FN(sys_fchmodat_x)			\
+	FN(sys_chmod_x)				\
+	FN(sys_fchmod_x)			\
+	FN(sys_mkdirat_x)			\
+	FN(sys_openat_x)			\
+	FN(sys_linkat_x)			\
+	FN(terminate_filler)
+
+#define FILLER_ENUM_FN(x) PPM_FILLER_##x,
+enum ppm_filler_id {
+	FILLER_LIST_MAPPER(FILLER_ENUM_FN)
+	PPM_FILLER_MAX
+};
+#undef FILLER_ENUM_FN
+
 
 enum ppm_event_type {
 	PPME_GENERIC_E = 0,
@@ -600,6 +710,39 @@ const struct syscall_evt_pair g_syscall_table[SYSCALL_TABLE_SIZE] = {
 [__NR_seccomp - SYSCALL_TABLE_ID0] =                    {UF_USED, PPME_SYSCALL_SECCOMP_E, PPME_SYSCALL_SECCOMP_X},
 #endif
 };
+
+
+//
+// fillers table map
+//
+
+enum autofill_paramtype {
+	APT_REG,
+	APT_SOCK,
+};
+
+struct ppm_autofill_arg {
+#define AF_ID_RETVAL -1
+#define AF_ID_USEDEFAULT -2
+	int16_t id;
+	long default_val;
+} _packed;
+
+struct ppm_event_entry {
+	enum ppm_filler_id filler_id;
+	int n_autofill_args;
+	enum autofill_paramtype paramtype;
+	struct ppm_autofill_arg autofill_args[PPM_MAX_AUTOFILL_ARGS];
+} _packed;
+
+#define FILLER_REF(x) PPM_FILLER_##x
+
+const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
+	[PPME_SYSCALL_OPEN_E] = {FILLER_REF(sys_empty)},
+	[PPME_SYSCALL_OPEN_X] = {FILLER_REF(sys_open_x)},
+	[PPME_SYSCALL_OPENAT_2_E] = {FILLER_REF(sys_empty)},
+	[PPME_SYSCALL_OPENAT_2_X] = {FILLER_REF(sys_openat_x)},
+};
 */
 import "C"
 
@@ -615,6 +758,28 @@ func populateSyscallTableMap(module *elf.Module) error {
 		err := module.UpdateElement(syscallTableMap, key, value, 0)
 		if err != nil {
 			log.Error(err, "failed to update syscall table map", "syscall-id", index)
+			return err
+		}
+	}
+	return nil
+}
+
+func populateFillerTableMap(module *elf.Module) error {
+	//log := logger.WithName("[populate-fillers-table-map]")
+
+	fillersMap := module.Map("fillers_table")
+	for index, ppmEvents := range C.g_ppm_events {
+		//if ppmEvents.filler_id == 0 {
+		//	continue
+		//}
+		//log.V(10).Info("update filler table", "key", index, "ppm eventes", ppmEvents)
+		//spew.Dump(index, ppmEvents.filler_id)
+
+		key := unsafe.Pointer(&index)
+		value := unsafe.Pointer(&ppmEvents)
+
+		err := module.UpdateElement(fillersMap, key, value, 0)
+		if err != nil {
 			return err
 		}
 	}

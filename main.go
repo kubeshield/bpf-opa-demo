@@ -48,6 +48,12 @@ func main() {
 		panic(err)
 	}
 
+	err = populateFillerTableMap(module)
+	if err != nil {
+		logger.Error(err, "error populating syscall table map")
+		panic(err)
+	}
+
 	err = readFromPerfMap(module)
 	if err != nil {
 		logger.Error(err, "error reading from perf map")
