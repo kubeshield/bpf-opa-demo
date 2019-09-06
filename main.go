@@ -6,7 +6,6 @@ import (
 	"strings"
 	"unsafe"
 
-	"github.com/davecgh/go-spew/spew"
 	"k8s.io/klog"
 
 	"github.com/pkg/errors"
@@ -51,6 +50,12 @@ func main() {
 	err = populateFillerTableMap(module)
 	if err != nil {
 		logger.Error(err, "error populating syscall table map")
+		panic(err)
+	}
+
+	err = populateEventTableMap(module)
+	if err != nil {
+		logger.Error(err, "error populating event table map")
 		panic(err)
 	}
 
@@ -159,10 +164,10 @@ func readFromPerfMap(module *elf.Module) error {
 	go func() {
 		for {
 			select {
-			case data := <-receiveChan:
-				spew.Dump(data)
-			case data := <-lostChan:
-				spew.Dump(data)
+			case _ = <-receiveChan:
+				//spew.Dump(data)
+			case _ = <-lostChan:
+				//spew.Dump(data)
 			}
 		}
 	}()
