@@ -910,6 +910,503 @@ extern const struct ppm_param_info sockopt_dynamic_param[];
 extern const struct ppm_param_info ptrace_dynamic_param[];
 extern const struct ppm_param_info bpf_dynamic_param[];
 
+//
+//Socket families
+//
+#define PPM_AF_UNSPEC       0
+#define PPM_AF_UNIX         1
+#define PPM_AF_LOCAL        1
+#define PPM_AF_INET         2
+#define PPM_AF_AX25         3
+#define PPM_AF_IPX          4
+#define PPM_AF_APPLETALK    5
+#define PPM_AF_NETROM       6
+#define PPM_AF_BRIDGE       7
+#define PPM_AF_ATMPVC       8
+#define PPM_AF_X25          9
+#define PPM_AF_INET6        10
+#define PPM_AF_ROSE         11
+#define PPM_AF_DECnet       12
+#define PPM_AF_NETBEUI      13
+#define PPM_AF_SECURITY     14
+#define PPM_AF_KEY          15
+#define PPM_AF_NETLINK      16
+#define PPM_AF_ROUTE        PPM_AF_NETLINK
+#define PPM_AF_PACKET       17
+#define PPM_AF_ASH          18
+#define PPM_AF_ECONET       19
+#define PPM_AF_ATMSVC       20
+#define PPM_AF_RDS          21
+#define PPM_AF_SNA          22
+#define PPM_AF_IRDA         23
+#define PPM_AF_PPPOX        24
+#define PPM_AF_WANPIPE      25
+#define PPM_AF_LLC          26
+#define PPM_AF_CAN          29
+#define PPM_AF_TIPC         30
+#define PPM_AF_BLUETOOTH    31
+#define PPM_AF_IUCV         32
+#define PPM_AF_RXRPC        33
+#define PPM_AF_ISDN         34
+#define PPM_AF_PHONET       35
+#define PPM_AF_IEEE802154   36
+#define PPM_AF_CAIF         37
+#define PPM_AF_ALG          38
+#define PPM_AF_NFC          39
+
+//
+//File flags
+//
+#define PPM_O_NONE	0
+#define PPM_O_RDONLY	(1 << 0)
+#define PPM_O_WRONLY	(1 << 1)
+#define PPM_O_RDWR	(PPM_O_RDONLY | PPM_O_WRONLY)
+#define PPM_O_CREAT	(1 << 2)
+#define PPM_O_APPEND	(1 << 3)
+#define PPM_O_DSYNC	(1 << 4)
+#define PPM_O_EXCL	(1 << 5)
+#define PPM_O_NONBLOCK	(1 << 6)
+#define PPM_O_SYNC	(1 << 7)
+#define PPM_O_TRUNC	(1 << 8)
+#define PPM_O_DIRECT	(1 << 9)
+#define PPM_O_DIRECTORY (1 << 10)
+#define PPM_O_LARGEFILE (1 << 11)
+#define PPM_O_CLOEXEC	(1 << 12)
+
+//
+//File modes
+//
+#define PPM_S_NONE  0
+#define PPM_S_IXOTH (1 << 0)
+#define PPM_S_IWOTH (1 << 1)
+#define PPM_S_IROTH (1 << 2)
+#define PPM_S_IXGRP (1 << 3)
+#define PPM_S_IWGRP (1 << 4)
+#define PPM_S_IRGRP (1 << 5)
+#define PPM_S_IXUSR (1 << 6)
+#define PPM_S_IWUSR (1 << 7)
+#define PPM_S_IRUSR (1 << 8)
+#define PPM_S_ISVTX (1 << 9)
+#define PPM_S_ISGID (1 << 10)
+#define PPM_S_ISUID (1 << 11)
+
+//flock() flags
+#define PPM_LOCK_NONE 0
+#define PPM_LOCK_SH (1 << 0)
+#define PPM_LOCK_EX (1 << 1)
+#define PPM_LOCK_NB (1 << 2)
+#define PPM_LOCK_UN (1 << 3)
+
+//Clone flags
+#define PPM_CL_NONE 0
+#define PPM_CL_CLONE_FILES (1 << 0)
+#define PPM_CL_CLONE_FS (1 << 1)
+#define PPM_CL_CLONE_IO (1 << 2)
+#define PPM_CL_CLONE_NEWIPC (1 << 3)
+#define PPM_CL_CLONE_NEWNET (1 << 4)
+#define PPM_CL_CLONE_NEWNS (1 << 5)
+#define PPM_CL_CLONE_NEWPID (1 << 6)
+#define PPM_CL_CLONE_NEWUTS (1 << 7)
+#define PPM_CL_CLONE_PARENT (1 << 8)
+#define PPM_CL_CLONE_PARENT_SETTID (1 << 9)
+#define PPM_CL_CLONE_PTRACE (1 << 10)
+#define PPM_CL_CLONE_SIGHAND (1 << 11)
+#define PPM_CL_CLONE_SYSVSEM (1 << 12)
+#define PPM_CL_CLONE_THREAD (1 << 13)
+#define PPM_CL_CLONE_UNTRACED (1 << 14)
+#define PPM_CL_CLONE_VM (1 << 15)
+#define PPM_CL_CLONE_INVERTED (1 << 16)
+#define PPM_CL_NAME_CHANGED (1 << 17)
+#define PPM_CL_CLOSED (1 << 18)
+#define PPM_CL_ACTIVE (1 << 19)
+#define PPM_CL_CLONE_NEWUSER (1 << 20)
+#define PPM_CL_PIPE_SRC (1 << 21)
+#define PPM_CL_PIPE_DST (1 << 22)
+#define PPM_CL_CLONE_CHILD_CLEARTID (1 << 23)
+#define PPM_CL_CLONE_CHILD_SETTID (1 << 24)
+#define PPM_CL_CLONE_SETTLS (1 << 25)
+#define PPM_CL_CLONE_STOPPED (1 << 26)
+#define PPM_CL_CLONE_VFORK (1 << 27)
+#define PPM_CL_CLONE_NEWCGROUP (1 << 28)
+#define PPM_CL_CHILD_IN_PIDNS (1<<29)
+
+//Futex Operations
+#define PPM_FU_FUTEX_WAIT 0
+#define PPM_FU_FUTEX_WAKE 1
+#define PPM_FU_FUTEX_FD 2
+#define PPM_FU_FUTEX_REQUEUE 3
+#define PPM_FU_FUTEX_CMP_REQUEUE 4
+#define PPM_FU_FUTEX_WAKE_OP 5
+#define PPM_FU_FUTEX_LOCK_PI 6
+#define PPM_FU_FUTEX_UNLOCK_PI 7
+#define PPM_FU_FUTEX_TRYLOCK_PI 8
+#define PPM_FU_FUTEX_WAIT_BITSET 9
+#define PPM_FU_FUTEX_WAKE_BITSET 10
+#define PPM_FU_FUTEX_WAIT_REQUEUE_PI 11
+#define PPM_FU_FUTEX_CMP_REQUEUE_PI 12
+#define PPM_FU_FUTEX_PRIVATE_FLAG	128
+#define PPM_FU_FUTEX_CLOCK_REALTIME 256
+
+//lseek() and llseek() whence
+#define PPM_SEEK_SET 0
+#define PPM_SEEK_CUR 1
+#define PPM_SEEK_END 2
+
+//poll() flags
+#define PPM_POLLIN (1 << 0)
+#define PPM_POLLPRI (1 << 1)
+#define PPM_POLLOUT (1 << 2)
+#define PPM_POLLRDHUP (1 << 3)
+#define PPM_POLLERR (1 << 4)
+#define PPM_POLLHUP (1 << 5)
+#define PPM_POLLNVAL (1 << 6)
+#define PPM_POLLRDNORM (1 << 7)
+#define PPM_POLLRDBAND (1 << 8)
+#define PPM_POLLWRNORM (1 << 9)
+#define PPM_POLLWRBAND (1 << 10)
+
+//mount() flags
+#define PPM_MS_RDONLY       (1<<0)
+#define PPM_MS_NOSUID       (1<<1)
+#define PPM_MS_NODEV        (1<<2)
+#define PPM_MS_NOEXEC       (1<<3)
+#define PPM_MS_SYNCHRONOUS  (1<<4)
+#define PPM_MS_REMOUNT      (1<<5)
+#define PPM_MS_MANDLOCK     (1<<6)
+#define PPM_MS_DIRSYNC      (1<<7)
+
+#define PPM_MS_NOATIME      (1<<10)
+#define PPM_MS_NODIRATIME   (1<<11)
+#define PPM_MS_BIND         (1<<12)
+#define PPM_MS_MOVE         (1<<13)
+#define PPM_MS_REC          (1<<14)
+#define PPM_MS_SILENT       (1<<15)
+#define PPM_MS_POSIXACL     (1<<16)
+#define PPM_MS_UNBINDABLE   (1<<17)
+#define PPM_MS_PRIVATE      (1<<18)
+#define PPM_MS_SLAVE        (1<<19)
+#define PPM_MS_SHARED       (1<<20)
+#define PPM_MS_RELATIME     (1<<21)
+#define PPM_MS_KERNMOUNT    (1<<22)
+#define PPM_MS_I_VERSION    (1<<23)
+#define PPM_MS_STRICTATIME  (1<<24)
+#define PPM_MS_LAZYTIME     (1<<25)
+
+#define PPM_MS_NOSEC        (1<<28)
+#define PPM_MS_BORN         (1<<29)
+#define PPM_MS_ACTIVE       (1<<30)
+#define PPM_MS_NOUSER       (1<<31)
+
+//umount() flags
+#define PPM_MNT_FORCE       1
+#define PPM_MNT_DETACH      2
+#define PPM_MNT_EXPIRE      4
+#define PPM_UMOUNT_NOFOLLOW 8
+
+//shutdown() how
+#define PPM_SHUT_RD 0
+#define PPM_SHUT_WR 1
+#define PPM_SHUT_RDWR 2
+
+//fs *at() flags
+#define PPM_AT_FDCWD -100
+
+//unlinkat() flags
+#define PPM_AT_REMOVEDIR 0x200
+
+//linkat() flags
+#define PPM_AT_SYMLINK_FOLLOW	0x400
+#define PPM_AT_EMPTY_PATH       0x1000
+
+//rlimit resources
+#define PPM_RLIMIT_CPU 0
+#define PPM_RLIMIT_FSIZE 1
+#define PPM_RLIMIT_DATA 2
+#define PPM_RLIMIT_STACK 3
+#define PPM_RLIMIT_CORE 4
+#define PPM_RLIMIT_RSS 5
+#define PPM_RLIMIT_NPROC 6
+#define PPM_RLIMIT_NOFILE 7
+#define PPM_RLIMIT_MEMLOCK 8
+#define PPM_RLIMIT_AS 9
+#define PPM_RLIMIT_LOCKS 10
+#define PPM_RLIMIT_SIGPENDING 11
+#define PPM_RLIMIT_MSGQUEUE 12
+#define PPM_RLIMIT_NICE 13
+#define PPM_RLIMIT_RTPRIO 14
+#define PPM_RLIMIT_RTTIME 15
+#define PPM_RLIMIT_UNKNOWN 255
+
+ //fcntl commands
+#define PPM_FCNTL_UNKNOWN 0
+#define PPM_FCNTL_F_DUPFD 1
+#define PPM_FCNTL_F_GETFD 2
+#define PPM_FCNTL_F_SETFD 3
+#define PPM_FCNTL_F_GETFL 4
+#define PPM_FCNTL_F_SETFL 5
+#define PPM_FCNTL_F_GETLK 6
+#define PPM_FCNTL_F_SETLK 8
+#define PPM_FCNTL_F_SETLKW 9
+#define PPM_FCNTL_F_SETOWN 10
+#define PPM_FCNTL_F_GETOWN 12
+#define PPM_FCNTL_F_SETSIG 13
+#define PPM_FCNTL_F_GETSIG 15
+#ifndef CONFIG_64BIT
+#define PPM_FCNTL_F_GETLK64 17
+#define PPM_FCNTL_F_SETLK64 18
+#define PPM_FCNTL_F_SETLKW64 19
+#endif
+#define PPM_FCNTL_F_SETOWN_EX 21
+#define PPM_FCNTL_F_GETOWN_EX 22
+#define PPM_FCNTL_F_SETLEASE 23
+#define PPM_FCNTL_F_GETLEASE 24
+#define PPM_FCNTL_F_CANCELLK 25
+#define PPM_FCNTL_F_DUPFD_CLOEXEC 26
+#define PPM_FCNTL_F_NOTIFY 27
+#define PPM_FCNTL_F_SETPIPE_SZ 28
+#define PPM_FCNTL_F_GETPIPE_SZ 29
+#define PPM_FCNTL_F_OFD_GETLK 30
+#define PPM_FCNTL_F_OFD_SETLK 31
+#define PPM_FCNTL_F_OFD_SETLKW 32
+
+ //getsockopt/setsockopt levels
+#define PPM_SOCKOPT_LEVEL_UNKNOWN 0
+#define PPM_SOCKOPT_LEVEL_SOL_SOCKET 1
+#define PPM_SOCKOPT_LEVEL_SOL_TCP 2
+
+ //getsockopt/setsockopt options
+ //SOL_SOCKET only currently
+#define PPM_SOCKOPT_UNKNOWN	0
+#define PPM_SOCKOPT_SO_DEBUG	1
+#define PPM_SOCKOPT_SO_REUSEADDR	2
+#define PPM_SOCKOPT_SO_TYPE		3
+#define PPM_SOCKOPT_SO_ERROR	4
+#define PPM_SOCKOPT_SO_DONTROUTE	5
+#define PPM_SOCKOPT_SO_BROADCAST	6
+#define PPM_SOCKOPT_SO_SNDBUF	7
+#define PPM_SOCKOPT_SO_RCVBUF	8
+#define PPM_SOCKOPT_SO_SNDBUFFORCE	32
+#define PPM_SOCKOPT_SO_RCVBUFFORCE	33
+#define PPM_SOCKOPT_SO_KEEPALIVE	9
+#define PPM_SOCKOPT_SO_OOBINLINE	10
+#define PPM_SOCKOPT_SO_NO_CHECK	11
+#define PPM_SOCKOPT_SO_PRIORITY	12
+#define PPM_SOCKOPT_SO_LINGER	13
+#define PPM_SOCKOPT_SO_BSDCOMPAT	14
+#define PPM_SOCKOPT_SO_REUSEPORT	15
+#define PPM_SOCKOPT_SO_PASSCRED	16
+#define PPM_SOCKOPT_SO_PEERCRED	17
+#define PPM_SOCKOPT_SO_RCVLOWAT	18
+#define PPM_SOCKOPT_SO_SNDLOWAT	19
+#define PPM_SOCKOPT_SO_RCVTIMEO	20
+#define PPM_SOCKOPT_SO_SNDTIMEO	21
+#define PPM_SOCKOPT_SO_SECURITY_AUTHENTICATION		22
+#define PPM_SOCKOPT_SO_SECURITY_ENCRYPTION_TRANSPORT	23
+#define PPM_SOCKOPT_SO_SECURITY_ENCRYPTION_NETWORK		24
+#define PPM_SOCKOPT_SO_BINDTODEVICE	25
+#define PPM_SOCKOPT_SO_ATTACH_FILTER	26
+#define PPM_SOCKOPT_SO_DETACH_FILTER	27
+#define PPM_SOCKOPT_SO_PEERNAME		28
+#define PPM_SOCKOPT_SO_TIMESTAMP		29
+#define PPM_SOCKOPT_SO_ACCEPTCONN		30
+#define PPM_SOCKOPT_SO_PEERSEC		31
+#define PPM_SOCKOPT_SO_PASSSEC		34
+#define PPM_SOCKOPT_SO_TIMESTAMPNS		35
+#define PPM_SOCKOPT_SO_MARK			36
+#define PPM_SOCKOPT_SO_TIMESTAMPING		37
+#define PPM_SOCKOPT_SO_PROTOCOL		38
+#define PPM_SOCKOPT_SO_DOMAIN		39
+#define PPM_SOCKOPT_SO_RXQ_OVFL             40
+#define PPM_SOCKOPT_SO_WIFI_STATUS		41
+#define PPM_SOCKOPT_SO_PEEK_OFF		42
+#define PPM_SOCKOPT_SO_NOFCS		43
+#define PPM_SOCKOPT_SO_LOCK_FILTER		44
+#define PPM_SOCKOPT_SO_SELECT_ERR_QUEUE	45
+#define PPM_SOCKOPT_SO_BUSY_POLL		46
+#define PPM_SOCKOPT_SO_MAX_PACING_RATE	47
+#define PPM_SOCKOPT_SO_BPF_EXTENSIONS	48
+#define PPM_SOCKOPT_SO_INCOMING_CPU		49
+#define PPM_SOCKOPT_SO_ATTACH_BPF		50
+#define PPM_SOCKOPT_SO_PEERGROUPS		51
+#define PPM_SOCKOPT_SO_MEMINFO		52
+#define PPM_SOCKOPT_SO_COOKIE		53
+
+ //getsockopt/setsockopt dynamic params
+#define PPM_SOCKOPT_IDX_UNKNOWN 0
+#define PPM_SOCKOPT_IDX_ERRNO 1
+#define PPM_SOCKOPT_IDX_UINT32 2
+#define PPM_SOCKOPT_IDX_UINT64 3
+#define PPM_SOCKOPT_IDX_TIMEVAL 4
+#define PPM_SOCKOPT_IDX_MAX 5
+
+ //ptrace requests
+#define PPM_PTRACE_UNKNOWN 0
+#define PPM_PTRACE_TRACEME 1
+#define PPM_PTRACE_PEEKTEXT 2
+#define PPM_PTRACE_PEEKDATA 3
+#define PPM_PTRACE_PEEKUSR 4
+#define PPM_PTRACE_POKETEXT 5
+#define PPM_PTRACE_POKEDATA 6
+#define PPM_PTRACE_POKEUSR 7
+#define PPM_PTRACE_CONT 8
+#define PPM_PTRACE_KILL 9
+#define PPM_PTRACE_SINGLESTEP 10
+#define PPM_PTRACE_ATTACH 11
+#define PPM_PTRACE_DETACH 12
+#define PPM_PTRACE_SYSCALL 13
+#define PPM_PTRACE_SETOPTIONS 14
+#define PPM_PTRACE_GETEVENTMSG 15
+#define PPM_PTRACE_GETSIGINFO 16
+#define PPM_PTRACE_SETSIGINFO 17
+#define PPM_PTRACE_GETREGSET 18
+#define PPM_PTRACE_SETREGSET 19
+#define PPM_PTRACE_SEIZE 20
+#define PPM_PTRACE_INTERRUPT 21
+#define PPM_PTRACE_LISTEN 22
+#define PPM_PTRACE_PEEKSIGINFO 23
+#define PPM_PTRACE_GETSIGMASK 24
+#define PPM_PTRACE_SETSIGMASK 25
+#define PPM_PTRACE_GETREGS 26
+#define PPM_PTRACE_SETREGS 27
+#define PPM_PTRACE_GETFPREGS 28
+#define PPM_PTRACE_SETFPREGS 29
+#define PPM_PTRACE_GETFPXREGS 30
+#define PPM_PTRACE_SETFPXREGS 31
+#define PPM_PTRACE_OLDSETOPTIONS 32
+#define PPM_PTRACE_GET_THREAD_AREA 33
+#define PPM_PTRACE_SET_THREAD_AREA 34
+#define PPM_PTRACE_ARCH_PRCTL 35
+#define PPM_PTRACE_SYSEMU 36
+#define PPM_PTRACE_SYSEMU_SINGLESTEP 37
+#define PPM_PTRACE_SINGLEBLOCK 38
+
+ //ptrace dynamic table indexes
+#define PPM_PTRACE_IDX_UINT64 0
+#define PPM_PTRACE_IDX_SIGTYPE 1
+
+#define PPM_PTRACE_IDX_MAX 2
+
+#define PPM_BPF_IDX_FD 0
+#define PPM_BPF_IDX_RES 1
+
+#define PPM_BPF_IDX_MAX 2
+
+ //memory protection flags
+#define PPM_PROT_NONE		0
+#define PPM_PROT_READ		(1 << 0)
+#define PPM_PROT_WRITE		(1 << 1)
+#define PPM_PROT_EXEC		(1 << 2)
+#define PPM_PROT_SEM		(1 << 3)
+#define PPM_PROT_GROWSDOWN	(1 << 4)
+#define PPM_PROT_GROWSUP	(1 << 5)
+#define PPM_PROT_SAO		(1 << 6)
+
+ //mmap flags
+#define PPM_MAP_SHARED		(1 << 0)
+#define PPM_MAP_PRIVATE		(1 << 1)
+#define PPM_MAP_FIXED		(1 << 2)
+#define PPM_MAP_ANONYMOUS	(1 << 3)
+#define PPM_MAP_32BIT		(1 << 4)
+#define PPM_MAP_RENAME		(1 << 5)
+#define PPM_MAP_NORESERVE	(1 << 6)
+#define PPM_MAP_POPULATE	(1 << 7)
+#define PPM_MAP_NONBLOCK	(1 << 8)
+#define PPM_MAP_GROWSDOWN	(1 << 9)
+#define PPM_MAP_DENYWRITE	(1 << 10)
+#define PPM_MAP_EXECUTABLE	(1 << 11)
+#define PPM_MAP_INHERIT		(1 << 12)
+#define PPM_MAP_FILE		(1 << 13)
+#define PPM_MAP_LOCKED		(1 << 14)
+
+ //splice flags
+#define PPM_SPLICE_F_MOVE		(1 << 0)
+#define PPM_SPLICE_F_NONBLOCK	(1 << 1)
+#define PPM_SPLICE_F_MORE		(1 << 2)
+#define PPM_SPLICE_F_GIFT		(1 << 3)
+
+ //quotactl cmds
+#define PPM_Q_QUOTAON		(1 << 0)
+#define PPM_Q_QUOTAOFF		(1 << 1)
+#define PPM_Q_GETFMT		(1 << 2)
+#define PPM_Q_GETINFO		(1 << 3)
+#define PPM_Q_SETINFO		(1 << 4)
+#define PPM_Q_GETQUOTA		(1 << 5)
+#define PPM_Q_SETQUOTA		(1 << 6)
+#define PPM_Q_SYNC			(1 << 7)
+#define PPM_Q_XQUOTAON		(1 << 8)
+#define PPM_Q_XQUOTAOFF		(1 << 9)
+#define PPM_Q_XGETQUOTA		(1 << 10)
+#define PPM_Q_XSETQLIM		(1 << 11)
+#define PPM_Q_XGETQSTAT		(1 << 12)
+#define PPM_Q_XQUOTARM		(1 << 13)
+#define PPM_Q_XQUOTASYNC	(1 << 14)
+#define PPM_Q_XGETQSTATV	(1 << 15)
+
+ //quotactl types
+#define PPM_USRQUOTA		(1 << 0)
+#define PPM_GRPQUOTA		(1 << 1)
+
+ //quotactl dqi_flags
+#define PPM_DQF_NONE		(1 << 0)
+#define PPM_V1_DQF_RSQUASH	(1 << 1)
+
+ //quotactl quotafmts
+#define PPM_QFMT_NOT_USED		(1 << 0)
+#define PPM_QFMT_VFS_OLD	(1 << 1)
+#define PPM_QFMT_VFS_V0		(1 << 2)
+#define PPM_QFMT_VFS_V1		(1 << 3)
+
+//Semop flags
+#define PPM_IPC_NOWAIT		(1 << 0)
+#define PPM_SEM_UNDO		(1 << 1)
+
+ //Semget flags
+#define PPM_IPC_CREAT  (1 << 13)
+#define PPM_IPC_EXCL   (1 << 14)
+
+#define PPM_IPC_STAT		(1 << 0)
+#define PPM_IPC_SET		(1 << 1)
+#define PPM_IPC_RMID		(1 << 2)
+#define PPM_IPC_INFO		(1 << 3)
+#define PPM_SEM_INFO		(1 << 4)
+#define PPM_SEM_STAT		(1 << 5)
+#define PPM_GETALL		(1 << 6)
+#define PPM_GETNCNT		(1 << 7)
+#define PPM_GETPID		(1 << 8)
+#define PPM_GETVAL		(1 << 9)
+#define PPM_GETZCNT		(1 << 10)
+#define PPM_SETALL		(1 << 11)
+#define PPM_SETVAL		(1 << 12)
+
+ //Access flags
+#define PPM_F_OK            (0)
+#define PPM_X_OK            (1 << 0)
+#define PPM_W_OK            (1 << 1)
+#define PPM_R_OK            (1 << 2)
+
+#define PPM_PF_PROTECTION_VIOLATION	(1 << 0)
+#define PPM_PF_PAGE_NOT_PRESENT		(1 << 1)
+#define PPM_PF_WRITE_ACCESS		(1 << 2)
+#define PPM_PF_READ_ACCESS		(1 << 3)
+#define PPM_PF_USER_FAULT		(1 << 4)
+#define PPM_PF_SUPERVISOR_FAULT		(1 << 5)
+#define PPM_PF_RESERVED_PAGE		(1 << 6)
+#define PPM_PF_INSTRUCTION_FETCH	(1 << 7)
+
+#ifndef RLIM_INFINITY
+# define RLIM_INFINITY          (~0UL)
+#endif
+
+#ifndef _STK_LIM_MAX
+# define _STK_LIM_MAX           RLIM_INFINITY
+#endif
+
+#define PPME_DIRECTION_FLAG 1
+#define PPME_IS_ENTER(x) ((x & PPME_DIRECTION_FLAG) == 0)
+#define PPME_IS_EXIT(x) (x & PPME_DIRECTION_FLAG)
+#define PPME_MAKE_ENTER(x) (x & (~1))
+
+
 const struct ppm_name_value socket_families[] = {
 	{"AF_NFC", PPM_AF_NFC},
 	{"AF_ALG", PPM_AF_ALG},
@@ -1417,6 +1914,24 @@ const struct ppm_name_value chmod_mode[] = {
 	{0, 0},
 };
 
+const struct ppm_param_info sockopt_dynamic_param[PPM_SOCKOPT_IDX_MAX] = {
+	[PPM_SOCKOPT_IDX_UNKNOWN] = {{0}, PT_BYTEBUF, PF_HEX},
+	[PPM_SOCKOPT_IDX_ERRNO] = {{0}, PT_ERRNO, PF_DEC},
+	[PPM_SOCKOPT_IDX_UINT32] = {{0}, PT_UINT32, PF_DEC},
+	[PPM_SOCKOPT_IDX_UINT64] = {{0}, PT_UINT64, PF_DEC},
+	[PPM_SOCKOPT_IDX_TIMEVAL] = {{0}, PT_RELTIME, PF_DEC},
+};
+
+const struct ppm_param_info ptrace_dynamic_param[PPM_PTRACE_IDX_MAX] = {
+	[PPM_PTRACE_IDX_UINT64] = {{0}, PT_UINT64, PF_HEX},
+	[PPM_PTRACE_IDX_SIGTYPE] = {{0}, PT_SIGTYPE, PF_DEC},
+};
+
+const struct ppm_param_info bpf_dynamic_param[PPM_BPF_IDX_MAX] = {
+	[PPM_BPF_IDX_FD] = {{0}, PT_FD, PF_DEC},
+	[PPM_BPF_IDX_RES] = {{0}, PT_ERRNO, PF_DEC},
+};
+
 
 struct ppm_event_info {
 	char name[PPM_MAX_NAME_LEN];
@@ -1794,7 +2309,7 @@ func populateEventTableMap(module *elf.Module) error {
 	log := logger.WithName("[populate-event-table-map]")
 
 	fillersMap := module.Map("event_info_table")
-	for index, ppmEvents := range C.g_ppm_events {
+	for index, ppmEvents := range C.g_event_info {
 		key := unsafe.Pointer(&index)
 		value := unsafe.Pointer(&ppmEvents)
 
