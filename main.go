@@ -1,19 +1,27 @@
 package main
 
-import "C"
 import (
+	"bytes"
+	"encoding/binary"
+	"errors"
 	"os"
 	"strings"
 	"unsafe"
 
-	"k8s.io/klog"
-
-	"github.com/pkg/errors"
-	"k8s.io/klog/klogr"
-
+	"github.com/davecgh/go-spew/spew"
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
+	"k8s.io/klog"
+	"k8s.io/klog/klogr"
 )
+
+type perfEventHeader struct {
+	Ts      uint64
+	Tid     uint64
+	Len     uint32
+	Type    uint16
+	Nparams uint32
+}
 
 var (
 	logger = klogr.New()
@@ -59,11 +67,15 @@ func main() {
 		panic(err)
 	}
 
-	err = readFromPerfMap(module)
+	perfMap, err := readFromPerfMap(module)
 	if err != nil {
 		logger.Error(err, "error reading from perf map")
 		panic(err)
 	}
+	defer perfMap.PollStop()
+
+	sig := make(chan os.Signal)
+	<-sig
 }
 
 func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
@@ -152,30 +164,33 @@ func populateSettingsMap(m *elf.Module) error {
 	return nil
 }
 
-func readFromPerfMap(module *elf.Module) error {
+func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 	receiveChan := make(chan []byte)
 	lostChan := make(chan uint64)
 
 	perfMap, err := elf.InitPerfMap(module, "perf_map", receiveChan, lostChan)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	go func() {
 		for {
 			select {
-			case _ = <-receiveChan:
-				//spew.Dump(data)
-			case _ = <-lostChan:
-				//spew.Dump(data)
+			case data := <-receiveChan:
+				out := &perfEventHeader{}
+				err = binary.Read(bytes.NewReader(data), binary.LittleEndian, out)
+				if err != nil {
+					logger.Error(err, "error reading data")
+				} else {
+					spew.Dump(out)
+				}
+			case data := <-lostChan:
+				logger.V(6).Info("lost events", "count", data)
 			}
 		}
 	}()
 
 	perfMap.PollStart()
 
-	sig := make(chan os.Signal)
-	<-sig
-
-	return nil
+	return perfMap, nil
 }
