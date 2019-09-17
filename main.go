@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 	"os"
 	"strings"
 	"unsafe"
@@ -173,17 +174,15 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 		return nil, err
 	}
 
+	evtDataCh := make(chan []byte, 100000)
+	go processEventData(evtDataCh)
+
 	go func() {
 		for {
 			select {
 			case data := <-receiveChan:
-				out := &perfEventHeader{}
-				err = binary.Read(bytes.NewReader(data), binary.LittleEndian, out)
-				if err != nil {
-					logger.Error(err, "error reading data")
-				} else {
-					spew.Dump(out)
-				}
+				evtDataCh <- data
+
 			case data := <-lostChan:
 				logger.V(6).Info("lost events", "count", data)
 			}
@@ -193,4 +192,59 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 	perfMap.PollStart()
 
 	return perfMap, nil
+}
+
+func processEventData(evtDataCh chan []byte) {
+	logger := klogr.New().WithName("[parse-event-data]")
+
+	for {
+		data := <-evtDataCh
+
+		out := &perfEventHeader{}
+		err := binary.Read(bytes.NewReader(data), binary.LittleEndian, out)
+		if err != nil {
+			logger.V(6).Info("error reading event header data", "error", err)
+			continue
+		}
+
+		// continue reading from perf map until we have all the necessary data
+		for len(data) < int(out.Len) {
+			data = append(data, <-evtDataCh...)
+		}
+
+		data = data[binary.Size(out):]
+		paramLens := make([]uint16, out.Nparams)
+
+		err = binary.Read(bytes.NewReader(data), binary.LittleEndian, paramLens)
+		if err != nil {
+			logger.Error(err, "error reading param length data")
+			continue
+		}
+		spew.Dump(paramLens)
+
+		data = data[binary.Size(paramLens):]
+
+		params := make([][]byte, out.Nparams)
+
+		for i := 0; i < int(out.Nparams); i++ {
+			params[i] = make([]byte, paramLens[i])
+			params[i] = data[:paramLens[i]]
+
+			switch i {
+			case 0:
+				fmt.Printf("ret = %v\n", binary.LittleEndian.Uint32(params[i]))
+			case 1:
+				fmt.Printf("dirfd = %v\n", binary.LittleEndian.Uint32(params[i]))
+			case 2:
+				fmt.Printf("name = %v\n", string(params[i]))
+			case 3:
+				fmt.Printf("flags = %v\n", binary.LittleEndian.Uint32(params[i]))
+			case 4:
+				fmt.Printf("mode = %v\n", binary.LittleEndian.Uint32(params[i]))
+			case 5:
+				fmt.Printf("device = %v\n", binary.LittleEndian.Uint32(params[i]))
+			}
+			data = data[paramLens[i]:]
+		}
+	}
 }
