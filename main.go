@@ -196,6 +196,11 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 func processEventData(evtDataCh chan []byte) {
 	logger := klogr.New().WithName("[parse-event-data]")
 
+	opaInputCh := make(chan *syscallEvent, 100000)
+	for i := 0; i < 10; i++ {
+		go queryToOPA(opaInputCh)
+	}
+
 	for {
 		data := <-evtDataCh
 
@@ -249,5 +254,7 @@ func processEventData(evtDataCh chan []byte) {
 			}
 			data = data[paramLens[i]:]
 		}
+
+		opaInputCh <- evt
 	}
 }
