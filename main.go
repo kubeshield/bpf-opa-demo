@@ -1,15 +1,14 @@
 package main
 
+import "C"
 import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"fmt"
 	"os"
 	"strings"
 	"unsafe"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
 	"k8s.io/klog"
@@ -125,7 +124,7 @@ func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
 				return nil, err
 			}
 
-			log.Info("successfully loaded program to tail_map")
+			log.V(6).Info("successfully loaded program to tail_map")
 
 		} else {
 			err = m.AttachRawTracepoint(prog.Name)
@@ -207,6 +206,10 @@ func processEventData(evtDataCh chan []byte) {
 			continue
 		}
 
+		evt := &syscallEvent{}
+		evt.Event = out
+		evt.Params = make(map[string]interface{})
+
 		// continue reading from perf map until we have all the necessary data
 		for len(data) < int(out.Len) {
 			data = append(data, <-evtDataCh...)
@@ -220,7 +223,6 @@ func processEventData(evtDataCh chan []byte) {
 			logger.Error(err, "error reading param length data")
 			continue
 		}
-		spew.Dump(paramLens)
 
 		data = data[binary.Size(paramLens):]
 
@@ -232,17 +234,18 @@ func processEventData(evtDataCh chan []byte) {
 
 			switch i {
 			case 0:
-				fmt.Printf("ret = %v\n", binary.LittleEndian.Uint32(params[i]))
+				evt.Params["fd"] = binary.LittleEndian.Uint64(params[i])
 			case 1:
-				fmt.Printf("dirfd = %v\n", binary.LittleEndian.Uint32(params[i]))
+				evt.Params["dirfd"] = binary.LittleEndian.Uint64(params[i])
 			case 2:
-				fmt.Printf("name = %v\n", string(params[i]))
+				// ignore the last byte \u000
+				evt.Params["name"] = string(params[i][:len(params[i])-1])
 			case 3:
-				fmt.Printf("flags = %v\n", binary.LittleEndian.Uint32(params[i]))
+				evt.Params["flags"] = binary.LittleEndian.Uint32(params[i])
 			case 4:
-				fmt.Printf("mode = %v\n", binary.LittleEndian.Uint32(params[i]))
+				evt.Params["mode"] = binary.LittleEndian.Uint32(params[i])
 			case 5:
-				fmt.Printf("device = %v\n", binary.LittleEndian.Uint32(params[i]))
+				evt.Params["dev"] = binary.LittleEndian.Uint32(params[i])
 			}
 			data = data[paramLens[i]:]
 		}
