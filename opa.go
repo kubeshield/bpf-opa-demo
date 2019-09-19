@@ -33,20 +33,10 @@ func queryToOPA(opaInputCh chan *syscallEvent) {
 
 		opaInput := bytes.NewReader(b)
 
-		resp, err := http.Post("http://localhost:8181/v1/data/rules", "application/json", opaInput)
+		out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", opaInput)
 		if err != nil {
-			logger.Error(err, "failed to create new requestt")
+			logger.Error(err, "failed to call rules api")
 			continue
-		}
-
-		out, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logger.Error(err, "failed to decode response body")
-		}
-
-		err = resp.Body.Close()
-		if err != nil {
-			logger.Error(err, "failed to close response body")
 		}
 
 		// output is empty, {"result":{}}
