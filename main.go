@@ -16,11 +16,11 @@ import (
 )
 
 type perfEventHeader struct {
-	Ts      uint64
-	Tid     uint64
-	Len     uint32
-	Type    uint16
-	Nparams uint32
+	Ts      uint64 `json:"ts"`
+	Tid     uint64 `json:"tid"`
+	Len     uint32 `json:"len"`
+	Type    uint16 `json:"type"`
+	Nparams uint32 `json:"nparams"`
 }
 
 var (
@@ -64,6 +64,13 @@ func main() {
 	err = populateEventTableMap(module)
 	if err != nil {
 		logger.Error(err, "error populating event table map")
+		panic(err)
+	}
+
+	// load all opa rules
+	err = loadRules()
+	if err != nil {
+		logger.Error(err, "error loading rules to opa api")
 		panic(err)
 	}
 
