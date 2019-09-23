@@ -5,12 +5,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"flag"
 	"os"
 	"strings"
 	"unsafe"
 
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
+	"github.com/prometheus/procfs"
 	"k8s.io/klog"
 	"k8s.io/klog/klogr"
 )
@@ -24,11 +26,22 @@ type perfEventHeader struct {
 }
 
 var (
-	logger = klogr.New()
+	logger   = klogr.New()
+	selfName string
 )
 
 func main() {
 	klog.InitFlags(nil)
+	flag.Parse()
+
+	proc, err := procfs.Self()
+	if err != nil {
+		panic(err)
+	}
+	selfName, err = proc.Comm()
+	if err != nil {
+		panic(err)
+	}
 
 	cpuRange, err := cpuonline.Get()
 	if err != nil {
