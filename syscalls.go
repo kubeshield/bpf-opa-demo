@@ -2321,3 +2321,7 @@ func populateEventTableMap(module *elf.Module) error {
 	}
 	return nil
 }
+
+func getSyscallName(id int) string {
+	return C.GoString(&C.g_event_info[id].name[0])
+}

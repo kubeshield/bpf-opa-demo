@@ -12,28 +12,41 @@ import (
 	"github.com/davecgh/go-spew/spew"
 )
 
-type opaInput struct {
-	Input *syscallEvent `json:"input"`
+type opaRequest struct {
+	Input *opaInput `json:"input"`
 }
+
+type opaInput struct {
+	Event *syscallEvent `json:"event"`
+}
+
 type syscallEvent struct {
-	Event  *perfEventHeader       `json:"event"`
+	*perfEventHeader
+	Name   string                 `json:"name"`
 	Params map[string]interface{} `json:"params"`
 }
 
-func queryToOPA(opaInputCh chan *syscallEvent) {
+func queryToOPA(syscallEventCh chan *syscallEvent) {
 	for {
-		evt := <-opaInputCh
-		input := &opaInput{Input: evt}
+		evt := <-syscallEventCh
 
-		b, err := json.Marshal(input)
+		evt.Name = getSyscallName(int(evt.Type))
+
+		req := &opaRequest{
+			Input: &opaInput{
+				Event: evt,
+			},
+		}
+
+		reqBytes, err := json.Marshal(req)
 		if err != nil {
 			logger.Error(err, "failed to marshal event")
 			continue
 		}
 
-		opaInput := bytes.NewReader(b)
+		reqReader := bytes.NewReader(reqBytes)
 
-		out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", opaInput)
+		out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", reqReader)
 		if err != nil {
 			logger.Error(err, "failed to call rules api")
 			continue
@@ -120,7 +133,7 @@ func callOpaAPI(method, url string, body io.Reader) ([]byte, error) {
 
 	if resp.StatusCode != http.StatusOK {
 		err = errors.New("request is not successfull")
-		logger.Error(err, "response", string(b), "code", resp.StatusCode)
+		logger.Error(err, string(b), "code", resp.StatusCode)
 		return nil, err
 	}
 

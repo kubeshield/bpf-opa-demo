@@ -203,9 +203,9 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 func processEventData(evtDataCh chan []byte) {
 	logger := klogr.New().WithName("[parse-event-data]")
 
-	opaInputCh := make(chan *syscallEvent, 100000)
+	syscallEventCh := make(chan *syscallEvent, 100000)
 	for i := 0; i < 10; i++ {
-		go queryToOPA(opaInputCh)
+		go queryToOPA(syscallEventCh)
 	}
 
 	for {
@@ -219,7 +219,7 @@ func processEventData(evtDataCh chan []byte) {
 		}
 
 		evt := &syscallEvent{}
-		evt.Event = out
+		evt.perfEventHeader = out
 		evt.Params = make(map[string]interface{})
 
 		// continue reading from perf map until we have all the necessary data
@@ -261,7 +261,6 @@ func processEventData(evtDataCh chan []byte) {
 			}
 			data = data[paramLens[i]:]
 		}
-
-		opaInputCh <- evt
+		syscallEventCh <- evt
 	}
 }
