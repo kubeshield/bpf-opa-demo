@@ -36,3 +36,37 @@ sensitive_files := [
 	"/etc/pam.conf",
 	"/etc/security/pwquality.conf"
 ]
+
+bash_config_filenames := [ ".bashrc", ".bash_profile", ".bash_history", ".bash_login", ".bash_logout", ".inputrc", ".profile" ]
+csh_config_filenames := [ ".cshrc", ".login", ".logout", ".history", ".tcshrc", ".cshdirs" ]
+zsh_config_filenames := [ ".zshenv", ".zprofile", ".zshrc", ".zlogin", ".zlogout" ]
+
+shell_config_filenames[name] { name := bash_config_filenames[_] }
+shell_config_filenames[name] { name := csh_config_filenames[_] }
+shell_config_filenames[name] { name := zsh_config_filenames[_] }
+
+bash_config_files := [ "/etc/profile", "/etc/bashrc" ]
+csh_config_files := [ "/etc/csh.cshrc", "/etc/csh.login" ]
+
+shell_config_files[name] { name := bash_config_files[_] }
+shell_config_files[name] { name := csh_config_files[_] }
+
+shell_config_directories := [ "/etc/zsh" ]
+
+shell_binaries := [ "ash", "bash", "csh", "ksh", "sh", "tcsh", "zsh", "dash" ]
+
+is_shell_process { input.process.name = shell_binaries[_] }
+
+open_shell_config_files {
+	name := shell_config_filenames[_]
+	endswith(input.event.params["name"], name)
+}
+
+open_shell_config_files {
+	input.event.params["name"] = shell_config_files[_]
+}
+
+open_shell_config_files {
+	dir := shell_config_directories[_]
+	contains(input.event.params["name"], dir)
+}
