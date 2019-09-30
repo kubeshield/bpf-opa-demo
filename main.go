@@ -56,27 +56,8 @@ func main() {
 		panic(err)
 	}
 
-	err = populateSettingsMap(module)
+	err = populateMaps(module)
 	if err != nil {
-		logger.Error(err, "failed to populate settings map")
-		panic(err)
-	}
-
-	err = populateSyscallTableMap(module)
-	if err != nil {
-		logger.Error(err, "error populating syscall table map")
-		panic(err)
-	}
-
-	err = populateFillerTableMap(module)
-	if err != nil {
-		logger.Error(err, "error populating syscall table map")
-		panic(err)
-	}
-
-	err = populateEventTableMap(module)
-	if err != nil {
-		logger.Error(err, "error populating event table map")
 		panic(err)
 	}
 
@@ -156,32 +137,6 @@ func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
 	}
 
 	return m, nil
-}
-
-func populateSettingsMap(m *elf.Module) error {
-	log := logger.WithName("[popultae-settings-map]")
-
-	type bpfSettings struct {
-		capture_enabled bool
-	}
-
-	settingsMap := m.Map("settings_map")
-	key := 0
-	settings := bpfSettings{}
-	err := m.LookupElement(settingsMap, unsafe.Pointer(&key), unsafe.Pointer(&settings))
-	if err != nil {
-		log.Error(err, "failed to lookup settings map", "key", key, "settings", settings)
-		return err
-	}
-
-	settings.capture_enabled = true
-	err = m.UpdateElement(settingsMap, unsafe.Pointer(&key), unsafe.Pointer(&settings), 0)
-	if err != nil {
-		log.Error(err, "failed to update settings map", "key", key, "settings", settings)
-		return err
-	}
-
-	return nil
 }
 
 func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
