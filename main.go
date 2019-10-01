@@ -25,6 +25,11 @@ type perfEventHeader struct {
 	Nparams uint32 `json:"nparams"`
 }
 
+type rawSyscallData struct {
+	perfEventHeader *perfEventHeader
+	data            []byte
+}
+
 var (
 	logger   = klogr.New()
 	selfName string
@@ -169,10 +174,10 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 }
 
 func processEventData(evtDataCh chan []byte) {
-	logger := klogr.New().WithName("[parse-event-data]")
-
+	parseCh := make(chan *rawSyscallData, 100000)
 	syscallEventCh := make(chan *syscallEvent, 100000)
 	for i := 0; i < 10; i++ {
+		go parseRawSyscallData(parseCh, syscallEventCh)
 		go queryToOPA(syscallEventCh)
 	}
 
@@ -186,19 +191,35 @@ func processEventData(evtDataCh chan []byte) {
 			continue
 		}
 
-		evt := &syscallEvent{}
-		evt.perfEventHeader = out
-		evt.Params = make(map[string]interface{})
-
 		// continue reading from perf map until we have all the necessary data
 		for len(data) < int(out.Len) {
 			data = append(data, <-evtDataCh...)
 		}
 
 		data = data[binary.Size(out):]
-		paramLens := make([]uint16, out.Nparams)
 
-		err = binary.Read(bytes.NewReader(data), binary.LittleEndian, paramLens)
+		parseCh <- &rawSyscallData{
+			perfEventHeader: out,
+			data:            data,
+		}
+	}
+}
+
+func parseRawSyscallData(parseCh chan *rawSyscallData, syscallEventCh chan *syscallEvent) {
+	for {
+		rawSyscallData := <-parseCh
+		perfEvtHeader := rawSyscallData.perfEventHeader
+		data := rawSyscallData.data
+
+		// oneliners.PrettyJson(perfEvtHeader)
+
+		evt := &syscallEvent{}
+		evt.perfEventHeader = perfEvtHeader
+		evt.Params = make(map[string]interface{})
+
+		paramLens := make([]uint16, perfEvtHeader.Nparams)
+
+		err := binary.Read(bytes.NewReader(data), binary.LittleEndian, paramLens)
 		if err != nil {
 			logger.Error(err, "error reading param length data")
 			continue
@@ -206,9 +227,9 @@ func processEventData(evtDataCh chan []byte) {
 
 		data = data[binary.Size(paramLens):]
 
-		params := make([][]byte, out.Nparams)
+		params := make([][]byte, evt.Nparams)
 
-		for i := 0; i < int(out.Nparams); i++ {
+		for i := 0; i < int(evt.Nparams); i++ {
 			params[i] = make([]byte, paramLens[i])
 			params[i] = data[:paramLens[i]]
 
