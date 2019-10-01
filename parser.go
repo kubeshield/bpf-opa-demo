@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"sync"
 
+	"github.com/pkg/errors"
 	"github.com/prometheus/procfs"
 )
 
@@ -63,25 +64,30 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 
 			proc, err := procfs.NewProc(int(evt.Tid))
 			if err != nil {
-				logger.Error(err, "failed to get Process info", "pid", evt.Tid)
-				continue
+				logger.V(6).Info("failed to get Process info", "pid", evt.Tid)
 			}
 
 			var procName, executable string
+			var cmdline []string
 			if proc.PID > 0 {
 				procName, err = proc.Comm()
 				if err != nil {
-					logger.Error(err, "failed to get Process name", "pid", evt.Tid)
+					logger.V(6).Info(errors.Wrap(err, "failed to get Process name").Error())
 				}
 				executable, err = proc.Executable()
 				if err != nil {
-					logger.Error(err, "failed to get Process executable", "pid", evt.Tid)
+					logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
+				}
+				cmdline, err = proc.CmdLine()
+				if err != nil {
+					logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
 				}
 			}
 
 			process := Process{
 				Name:       procName,
 				Executable: executable,
+				Cmdline:    cmdline,
 			}
 
 			processMapLock.Lock()
