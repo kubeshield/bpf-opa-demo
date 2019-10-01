@@ -33,69 +33,66 @@ type Process struct {
 	Executable string `json:"executable"`
 }
 
-func queryToOPA(syscallEventCh chan *syscallEvent) {
-	for {
-		evt := <-syscallEventCh
+func queryToOPA(evt *syscallEvent) {
+	proc, err := procfs.NewProc(int(evt.Tid))
+	if err != nil {
+		logger.Error(err, "failed to get Process info", "pid", evt.Tid)
+	}
 
-		proc, err := procfs.NewProc(int(evt.Tid))
-		if err != nil {
-			logger.Error(err, "failed to get Process info", "pid", evt.Tid)
-			// continue
-		}
-		procName, err := proc.Comm()
+	var procName, executable string
+	if proc.PID > 0 {
+		procName, err = proc.Comm()
 		if err != nil {
 			logger.Error(err, "failed to get Process name", "pid", evt.Tid)
-			// continue
 		}
 		if procName == selfName {
-			continue
+			return
 		}
-		executable, err := proc.Executable()
+		executable, err = proc.Executable()
 		if err != nil {
 			logger.Error(err, "failed to get Process executable", "pid", evt.Tid)
-			// continue
 		}
-
-		evt.Name = getSyscallName(int(evt.Type))
-
-		req := &opaRequest{
-			Input: &opaInput{
-				Event: evt,
-				Process: &Process{
-					Name:       procName,
-					Executable: executable,
-				},
-			},
-		}
-
-		reqBytes, err := json.Marshal(req)
-		if err != nil {
-			logger.Error(err, "failed to marshal event")
-			continue
-		}
-
-		reqReader := bytes.NewReader(reqBytes)
-
-		out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", reqReader)
-		if err != nil {
-			logger.Error(err, "failed to call rules api")
-			continue
-		}
-
-		// output is empty, {"result":{}}
-		if len(out) <= 13 {
-			continue
-		}
-
-		var opaResult map[string]interface{}
-		err = json.Unmarshal(out, &opaResult)
-		if err != nil {
-			logger.Error(err, "failed to unmarshall queryToOPA response")
-			continue
-		}
-
-		spew.Dump(opaResult["result"])
 	}
+
+	evt.Name = getSyscallName(int(evt.Type))
+
+	req := &opaRequest{
+		Input: &opaInput{
+			Event: evt,
+			Process: &Process{
+				Name:       procName,
+				Executable: executable,
+			},
+		},
+	}
+
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		logger.Error(err, "failed to marshal event")
+		return
+	}
+
+	reqReader := bytes.NewReader(reqBytes)
+
+	out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", reqReader)
+	if err != nil {
+		logger.Error(err, "failed to call rules api")
+		return
+	}
+
+	// output is empty, {"result":{}}
+	if len(out) <= 13 {
+		return
+	}
+
+	var opaResult map[string]interface{}
+	err = json.Unmarshal(out, &opaResult)
+	if err != nil {
+		logger.Error(err, "failed to unmarshall queryToOPA response")
+		return
+	}
+
+	spew.Dump(opaResult["result"])
 }
 
 func loadRules() error {

@@ -154,7 +154,7 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 	}
 
 	evtDataCh := make(chan []byte, 100000)
-	go processEventData(evtDataCh)
+	go processPerfEventData(evtDataCh)
 
 	go func() {
 		for {
@@ -173,12 +173,10 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 	return perfMap, nil
 }
 
-func processEventData(evtDataCh chan []byte) {
-	parseCh := make(chan *rawSyscallData, 100000)
-	syscallEventCh := make(chan *syscallEvent, 100000)
-	for i := 0; i < 10; i++ {
-		go parseRawSyscallData(parseCh, syscallEventCh)
-		go queryToOPA(syscallEventCh)
+func processPerfEventData(evtDataCh chan []byte) {
+	parseCh := make(chan *rawSyscallData)
+	for i := 0; i < 5; i++ {
+		go parseRawSyscallData(parseCh)
 	}
 
 	for {
@@ -205,7 +203,7 @@ func processEventData(evtDataCh chan []byte) {
 	}
 }
 
-func parseRawSyscallData(parseCh chan *rawSyscallData, syscallEventCh chan *syscallEvent) {
+func parseRawSyscallData(parseCh chan *rawSyscallData) {
 	for {
 		rawSyscallData := <-parseCh
 		perfEvtHeader := rawSyscallData.perfEventHeader
@@ -250,6 +248,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, syscallEventCh chan *sysc
 			}
 			data = data[paramLens[i]:]
 		}
-		syscallEventCh <- evt
+		queryToOPA(evt)
 	}
 }
