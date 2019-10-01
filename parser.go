@@ -3,6 +3,12 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+
+	"github.com/prometheus/procfs"
+)
+
+var (
+	processMap = map[uint64]Process{}
 )
 
 func parseRawSyscallData(parseCh chan *rawSyscallData) {
@@ -52,7 +58,33 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 			}
 		case 292: // execve_enter
 			evt.Params["name"] = string(data[:paramLens[0]-1])
+
+			proc, err := procfs.NewProc(int(evt.Tid))
+			if err != nil {
+				logger.Error(err, "failed to get Process info", "pid", evt.Tid)
+				continue
+			}
+
+			var procName, executable string
+			if proc.PID > 0 {
+				procName, err = proc.Comm()
+				if err != nil {
+					logger.Error(err, "failed to get Process name", "pid", evt.Tid)
+				}
+				executable, err = proc.Executable()
+				if err != nil {
+					logger.Error(err, "failed to get Process executable", "pid", evt.Tid)
+				}
+			}
+
+			process := Process{
+				Name:       procName,
+				Executable: executable,
+			}
+
+			processMap[evt.Tid] = process
 		}
+
 		queryToOPA(evt)
 	}
 }

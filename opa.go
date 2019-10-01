@@ -10,7 +10,6 @@ import (
 	"net/http"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/prometheus/procfs"
 )
 
 type opaRequest struct {
@@ -34,35 +33,18 @@ type Process struct {
 }
 
 func queryToOPA(evt *syscallEvent) {
-	proc, err := procfs.NewProc(int(evt.Tid))
-	if err != nil {
-		logger.Error(err, "failed to get Process info", "pid", evt.Tid)
-	}
+	proc := processMap[evt.Tid]
 
-	var procName, executable string
-	if proc.PID > 0 {
-		procName, err = proc.Comm()
-		if err != nil {
-			logger.Error(err, "failed to get Process name", "pid", evt.Tid)
-		}
-		if procName == selfName {
-			return
-		}
-		executable, err = proc.Executable()
-		if err != nil {
-			logger.Error(err, "failed to get Process executable", "pid", evt.Tid)
-		}
+	if proc.Name == selfName {
+		return
 	}
 
 	evt.Name = getSyscallName(int(evt.Type))
 
 	req := &opaRequest{
 		Input: &opaInput{
-			Event: evt,
-			Process: &Process{
-				Name:       procName,
-				Executable: executable,
-			},
+			Event:   evt,
+			Process: &proc,
 		},
 	}
 
