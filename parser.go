@@ -3,12 +3,14 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"sync"
 
 	"github.com/prometheus/procfs"
 )
 
 var (
-	processMap = map[uint64]Process{}
+	processMapLock sync.RWMutex
+	processMap     = map[uint64]Process{}
 )
 
 func parseRawSyscallData(parseCh chan *rawSyscallData) {
@@ -82,7 +84,9 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 				Executable: executable,
 			}
 
+			processMapLock.Lock()
 			processMap[evt.Tid] = process
+			processMapLock.Unlock()
 		}
 
 		queryToOPA(evt)

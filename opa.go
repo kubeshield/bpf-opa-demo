@@ -33,7 +33,9 @@ type Process struct {
 }
 
 func queryToOPA(evt *syscallEvent) {
+	processMapLock.RLock()
 	proc := processMap[evt.Tid]
+	processMapLock.RUnlock()
 
 	if proc.Name == selfName {
 		return
