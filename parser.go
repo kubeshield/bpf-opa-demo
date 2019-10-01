@@ -27,26 +27,31 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 
 		data = data[binary.Size(paramLens):]
 
-		for i := 0; i < int(evt.Nparams); i++ {
-			rawParams := make([]byte, paramLens[i])
-			rawParams = data[:paramLens[i]]
+		switch perfEvtHeader.Type {
+		case 307: // openat exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
 
-			switch i {
-			case 0:
-				evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
-			case 1:
-				evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
-			case 2:
-				// ignore the last byte \u000
-				evt.Params["name"] = string(rawParams[:paramLens[i]-1])
-			case 3:
-				evt.Params["flags"] = binary.LittleEndian.Uint32(rawParams)
-			case 4:
-				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-			case 5:
-				evt.Params["dev"] = binary.LittleEndian.Uint32(rawParams)
+				switch i {
+				case 0:
+					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					// ignore the last byte \u000
+					evt.Params["name"] = string(rawParams[:paramLens[i]-1])
+				case 3:
+					evt.Params["flags"] = binary.LittleEndian.Uint32(rawParams)
+				case 4:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+				case 5:
+					evt.Params["dev"] = binary.LittleEndian.Uint32(rawParams)
+				}
+				data = data[paramLens[i]:]
 			}
-			data = data[paramLens[i]:]
+		case 292: // execve_enter
+			evt.Params["name"] = string(data[:paramLens[0]-1])
 		}
 		queryToOPA(evt)
 	}
