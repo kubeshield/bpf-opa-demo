@@ -28,9 +28,10 @@ type syscallEvent struct {
 }
 
 type Process struct {
-	Name       string   `json:"name"`
-	Executable string   `json:"executable"`
-	Cmdline    []string `json:"cmdline"`
+	Name        string   `json:"name"`
+	Executable  string   `json:"executable"`
+	Cmdline     []string `json:"cmdline"`
+	ContainerID string   `json:"containerID"`
 }
 
 func queryToOPA(evt *syscallEvent) {

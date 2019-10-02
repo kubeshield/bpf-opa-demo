@@ -1,8 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/pkg/errors"
@@ -67,7 +72,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 				logger.V(6).Info("failed to get Process info", "pid", evt.Tid)
 			}
 
-			var procName, executable string
+			var procName, executable, containerID string
 			var cmdline []string
 			if proc.PID > 0 {
 				procName, err = proc.Comm()
@@ -82,12 +87,17 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 				if err != nil {
 					logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
 				}
+				containerID, err = getContainerIDfromPID(proc.PID)
+				if err != nil {
+					logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
+				}
 			}
 
 			process := Process{
-				Name:       procName,
-				Executable: executable,
-				Cmdline:    cmdline,
+				Name:        procName,
+				Executable:  executable,
+				Cmdline:     cmdline,
+				ContainerID: containerID,
 			}
 
 			processMapLock.Lock()
@@ -97,4 +107,25 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 
 		queryToOPA(evt)
 	}
+}
+
+// returns containerID from /proc/<pid>/cgroup file
+// cgroup file content is in this format: 10:memory:/docker/<containerID>
+func getContainerIDfromPID(pid int) (string, error) {
+	cgroup := filepath.Join("/proc", fmt.Sprintf("%d", pid), "cgroup")
+
+	f, err := os.Open(cgroup)
+	if err != nil {
+		return "", err
+	}
+
+	s := bufio.NewScanner(f)
+	for s.Scan() {
+		str := s.Text()
+		arr := strings.Split(str, "/")
+		if len(arr) == 3 && arr[1] == "docker" {
+			return arr[2], nil
+		}
+	}
+	return "", nil
 }
