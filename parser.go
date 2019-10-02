@@ -44,6 +44,9 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 		switch perfEvtHeader.Type {
 		case 307: // openat exit
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
 				rawParams := make([]byte, paramLens[i])
 				rawParams = data[:paramLens[i]]
 
@@ -103,6 +106,48 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 			processMapLock.Lock()
 			processMap[evt.Tid] = process
 			processMapLock.Unlock()
+
+		case 293: // execve_exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["exe"] = string(rawParams[:paramLens[i]-1])
+				case 13:
+					evt.Params["comm"] = string(rawParams[:paramLens[i]-1])
+				case 2:
+					evt.Params["args"] = convertToStringSlice(rawParams)
+				case 4:
+					evt.Params["pid"] = binary.LittleEndian.Uint64(rawParams)
+				case 5:
+					evt.Params["ppid"] = binary.LittleEndian.Uint64(rawParams)
+				case 7:
+					evt.Params["fdlimit"] = binary.LittleEndian.Uint64(rawParams)
+				case 8:
+					evt.Params["pgflt_maj"] = binary.LittleEndian.Uint64(rawParams)
+				case 9:
+					evt.Params["pgflt_min"] = binary.LittleEndian.Uint64(rawParams)
+				case 10:
+					evt.Params["vm_size"] = binary.LittleEndian.Uint32(rawParams)
+				case 11:
+					evt.Params["vm_rss"] = binary.LittleEndian.Uint32(rawParams)
+				case 12:
+					evt.Params["vm_swap"] = binary.LittleEndian.Uint32(rawParams)
+				case 15:
+					evt.Params["env"] = convertToStringSlice(rawParams)
+
+				case 14:
+					evt.Params["cgroup"] = convertToStringSlice(rawParams)
+				}
+				data = data[paramLens[i]:]
+			}
 		}
 
 		queryToOPA(evt)
@@ -128,4 +173,18 @@ func getContainerIDfromPID(pid int) (string, error) {
 		}
 	}
 	return "", nil
+}
+
+// converts raw syscall param of slice types into []string
+func convertToStringSlice(rawParams []byte) []string {
+	// last byte is \u000
+	byteSlice := bytes.Split(rawParams, rawParams[len(rawParams)-1:])
+
+	var res []string
+	for _, b := range byteSlice {
+		if len(b) > 0 {
+			res = append(res, string(b))
+		}
+	}
+	return res
 }
