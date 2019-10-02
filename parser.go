@@ -9,9 +9,6 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
-
-	"github.com/pkg/errors"
-	"github.com/prometheus/procfs"
 )
 
 var (
@@ -70,44 +67,9 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 		case 292: // execve_enter
 			evt.Params["name"] = string(data[:paramLens[0]-1])
 
-			proc, err := procfs.NewProc(int(evt.Tid))
-			if err != nil {
-				logger.V(6).Info("failed to get Process info", "pid", evt.Tid)
-			}
-
-			var procName, executable, containerID string
-			var cmdline []string
-			if proc.PID > 0 {
-				procName, err = proc.Comm()
-				if err != nil {
-					logger.V(6).Info(errors.Wrap(err, "failed to get Process name").Error())
-				}
-				executable, err = proc.Executable()
-				if err != nil {
-					logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
-				}
-				cmdline, err = proc.CmdLine()
-				if err != nil {
-					logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
-				}
-				containerID, err = getContainerIDfromPID(proc.PID)
-				if err != nil {
-					logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
-				}
-			}
-
-			process := Process{
-				Name:        procName,
-				Executable:  executable,
-				Cmdline:     cmdline,
-				ContainerID: containerID,
-			}
-
-			processMapLock.Lock()
-			processMap[evt.Tid] = process
-			processMapLock.Unlock()
-
 		case 293: // execve_exit
+			var proc Process
+
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
 					continue
@@ -120,14 +82,19 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
 				case 1:
 					evt.Params["exe"] = string(rawParams[:paramLens[i]-1])
+					proc.Executable = evt.Params["exe"].(string)
 				case 13:
 					evt.Params["comm"] = string(rawParams[:paramLens[i]-1])
+					proc.Command = evt.Params["comm"].(string)
 				case 2:
 					evt.Params["args"] = convertToStringSlice(rawParams)
+					proc.Args = evt.Params["args"].([]string)
 				case 4:
 					evt.Params["pid"] = binary.LittleEndian.Uint64(rawParams)
+					proc.Pid = evt.Params["pid"].(uint64)
 				case 5:
 					evt.Params["ppid"] = binary.LittleEndian.Uint64(rawParams)
+					proc.Ppid = evt.Params["ppid"].(uint64)
 				case 7:
 					evt.Params["fdlimit"] = binary.LittleEndian.Uint64(rawParams)
 				case 8:
@@ -142,12 +109,15 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 					evt.Params["vm_swap"] = binary.LittleEndian.Uint32(rawParams)
 				case 15:
 					evt.Params["env"] = convertToStringSlice(rawParams)
-
 				case 14:
 					evt.Params["cgroup"] = convertToStringSlice(rawParams)
+					proc.Cgroup = evt.Params["cgroup"].([]string)
 				}
 				data = data[paramLens[i]:]
 			}
+			processMapLock.Lock()
+			processMap[evt.Tid] = proc
+			processMapLock.Unlock()
 		}
 
 		queryToOPA(evt)
@@ -188,3 +158,42 @@ func convertToStringSlice(rawParams []byte) []string {
 	}
 	return res
 }
+
+// TODO: this need to be used when we scan /proc at startup
+// func() {
+// proc, err := procfs.NewProc(int(evt.Tid))
+// if err != nil {
+// logger.V(6).Info("failed to get Process info", "pid", evt.Tid)
+// }
+// 	var procName, executable, containerID string
+// 	var cmdline []string
+// 	if proc.PID > 0 {
+// 		procName, err = proc.Comm()
+// 		if err != nil {
+// 			logger.V(6).Info(errors.Wrap(err, "failed to get Process name").Error())
+// 		}
+// 		executable, err = proc.Executable()
+// 		if err != nil {
+// 			logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
+// 		}
+// 		cmdline, err = proc.CmdLine()
+// 		if err != nil {
+// 			logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
+// 		}
+// 		containerID, err = getContainerIDfromPID(proc.PID)
+// 		if err != nil {
+// 			logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
+// 		}
+// 	}
+//
+// 	process := Process{
+// 		Name:        procName,
+// 		Executable:  executable,
+// 		Cmdline:     cmdline,
+// 		ContainerID: containerID,
+// 	}
+//
+// 	processMapLock.Lock()
+// 	processMap[evt.Tid] = process
+//  processMapLock.Unlock()
+// }
