@@ -744,6 +744,7 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_OPENAT_2_X] = {FILLER_REF(sys_openat_x)},
 	[PPME_SYSCALL_EXECVE_19_E] = {FILLER_REF(sys_execve_e)},
 	[PPME_SYSCALL_EXECVE_19_X] = {FILLER_REF(proc_startupdate)},
+	[PPME_PROCEXIT_1_E] = {FILLER_REF(sys_procexit_e)},
 };
 
 

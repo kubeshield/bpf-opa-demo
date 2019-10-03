@@ -118,6 +118,11 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
+
+		case 186: // procexit
+			processMapLock.Lock()
+			delete(processMap, evt.Tid)
+			processMapLock.Unlock()
 		}
 
 		queryToOPA(evt)
