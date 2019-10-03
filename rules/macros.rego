@@ -70,3 +70,17 @@ open_shell_config_files {
 	dir := shell_config_directories[_]
 	contains(input.event.params["name"], dir)
 }
+
+spawned_process {
+	input.event.name = "execve"
+}
+
+update_cron_config {
+	open_write
+	startswith(input.event.params["name"], "/etc/cron")
+}
+
+start_crontab {
+	spawned_process
+	input.process.executable = "crontab"
+}
