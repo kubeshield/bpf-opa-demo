@@ -4,14 +4,15 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"errors"
 	"flag"
 	"os"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
+	"github.com/pkg/errors"
 	"github.com/prometheus/procfs"
 	"k8s.io/klog"
 	"k8s.io/klog/klogr"
@@ -33,6 +34,7 @@ type rawSyscallData struct {
 var (
 	logger   = klogr.New()
 	selfName string
+	selfPid  = make(map[int]bool)
 )
 
 func main() {
@@ -79,6 +81,8 @@ func main() {
 		panic(err)
 	}
 	defer perfMap.PollStop()
+
+	loadAllProcess()
 
 	sig := make(chan os.Signal)
 	<-sig
@@ -200,5 +204,48 @@ func processPerfEventData(evtDataCh chan []byte) {
 			perfEventHeader: out,
 			data:            data,
 		}
+	}
+}
+
+func loadAllProcess() {
+	// wait for all go-routines to start
+	time.Sleep(time.Second * 5)
+
+	procs, err := procfs.AllProcs()
+	if err != nil {
+		logger.Error(err, "failed to read /proc")
+	}
+
+	for _, p := range procs {
+		name, err := p.Comm()
+		if err != nil {
+			logger.Error(err, "error reading command name, skipping")
+		}
+		if name == selfName {
+			selfPid[p.PID] = true
+		}
+		executable, err := p.Executable()
+		if err != nil {
+			logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
+		}
+		cmdline, err := p.CmdLine()
+		if err != nil {
+			logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
+		}
+		containerID, err := getContainerIDfromPID(p.PID)
+		if err != nil {
+			logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
+		}
+
+		process := Process{
+			Name:       name,
+			Executable: executable,
+			Args:       cmdline,
+			Cgroup:     []string{containerID},
+		}
+
+		processMapLock.Lock()
+		processMap[uint64(p.PID)] = process
+		processMapLock.Unlock()
 	}
 }
