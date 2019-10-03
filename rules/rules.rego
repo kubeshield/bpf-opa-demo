@@ -16,3 +16,9 @@ modify_shell_configuration_file = input {
 	not is_shell_process
 	open_shell_config_files
 }
+
+read_shell_configuration_file = input {
+	open_read
+	not is_shell_process
+	open_shell_config_files
+}
