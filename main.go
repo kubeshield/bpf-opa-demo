@@ -179,8 +179,10 @@ func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
 
 func processPerfEventData(evtDataCh chan []byte) {
 	parseCh := make(chan *rawSyscallData)
+	opaQueryCh := make(chan *syscallEvent)
 	for i := 0; i < 5; i++ {
-		go parseRawSyscallData(parseCh)
+		go parseRawSyscallData(parseCh, opaQueryCh)
+		go querySyscallEventToOPA(opaQueryCh)
 	}
 
 	for {

@@ -16,7 +16,7 @@ var (
 	processMap     = map[uint64]Process{}
 )
 
-func parseRawSyscallData(parseCh chan *rawSyscallData) {
+func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallEvent) {
 	for {
 		rawSyscallData := <-parseCh
 		perfEvtHeader := rawSyscallData.perfEventHeader
@@ -65,6 +65,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 				data = data[paramLens[i]:]
 			}
 		case 292: // execve_enter
+			// TODO: do we need this?
 			evt.Params["name"] = string(data[:paramLens[0]-1])
 
 		case 293: // execve_exit
@@ -125,7 +126,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData) {
 			processMapLock.Unlock()
 		}
 
-		queryToOPA(evt)
+		opaQueryCh <- evt
 	}
 }
 

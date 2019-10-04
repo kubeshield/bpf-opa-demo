@@ -8,8 +8,9 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"time"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/the-redback/go-oneliners"
 )
 
 type opaRequest struct {
@@ -37,51 +38,65 @@ type Process struct {
 	Cgroup     []string `json:"cgroup"`
 }
 
-func queryToOPA(evt *syscallEvent) {
-	if selfPid[int(evt.Tid)] {
-		return
+// func queryToOPA(evt *syscallEvent) {
+func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
+	for {
+		evt := <-opaQueryCh
+
+		if selfPid[int(evt.Tid)] {
+			continue
+		}
+
+		processMapLock.RLock()
+		proc, ok := processMap[evt.Tid]
+		processMapLock.RUnlock()
+
+		if !ok {
+			go func() {
+				time.Sleep(time.Millisecond * 100)
+				opaQueryCh <- evt
+			}()
+			continue
+		}
+
+		evt.Name = getSyscallName(int(evt.Type))
+
+		req := &opaRequest{
+			Input: &opaInput{
+				Event:   evt,
+				Process: &proc,
+			},
+		}
+
+		reqBytes, err := json.Marshal(req)
+		if err != nil {
+			logger.Error(err, "failed to marshal event")
+			continue
+		}
+
+		reqReader := bytes.NewReader(reqBytes)
+
+		out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", reqReader)
+		if err != nil {
+			logger.Error(err, "failed to call rules api")
+			continue
+		}
+
+		// output is empty, {"result":{}}
+		if len(out) <= 13 {
+			continue
+		}
+
+		var opaResult map[string]interface{}
+		err = json.Unmarshal(out, &opaResult)
+		if err != nil {
+			logger.Error(err, "failed to unmarshall queryToOPA response")
+			continue
+		}
+
+		// spew.Dump(opaResult["result"])
+		oneliners.PrettyJson(opaResult["result"])
 	}
-
-	processMapLock.RLock()
-	proc := processMap[evt.Tid]
-	processMapLock.RUnlock()
-
-	evt.Name = getSyscallName(int(evt.Type))
-
-	req := &opaRequest{
-		Input: &opaInput{
-			Event:   evt,
-			Process: &proc,
-		},
-	}
-
-	reqBytes, err := json.Marshal(req)
-	if err != nil {
-		logger.Error(err, "failed to marshal event")
-		return
-	}
-
-	reqReader := bytes.NewReader(reqBytes)
-
-	out, err := callOpaAPI("POST", "http://localhost:8181/v1/data/rules", reqReader)
-	if err != nil {
-		logger.Error(err, "failed to call rules api")
-		return
-	}
-
-	// output is empty, {"result":{}}
-	if len(out) <= 13 {
-		return
-	}
-
-	var opaResult map[string]interface{}
-	err = json.Unmarshal(out, &opaResult)
-	if err != nil {
-		logger.Error(err, "failed to unmarshall queryToOPA response")
-		return
-	}
-
-	spew.Dump(opaResult["result"])
 }
 
 func loadRules() error {
