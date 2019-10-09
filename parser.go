@@ -119,11 +119,53 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
+			logger.V(4).Info("", "proc", evt)
 
 		case 186: // procexit
 			processMapLock.Lock()
 			delete(processMap, evt.Tid)
 			processMapLock.Unlock()
+
+		case 175: // rename exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
+				case 2:
+					evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+		case 177: // renameat exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["olddirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
+				case 3:
+					evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 4:
+					evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
 		}
 
 		opaQueryCh <- evt
