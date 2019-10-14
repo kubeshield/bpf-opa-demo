@@ -1,5 +1,8 @@
 package macros
 
+#
+# open events
+#
 open_write {
 	open_event
 	is_open_write
@@ -30,6 +33,9 @@ O_RDONLY := 1
 O_WRONLY := 2
 
 
+#
+# sensitive files
+#
 sensitive_files := [
 	"/etc/shadow",
 	"/etc/sudoers",
@@ -37,6 +43,9 @@ sensitive_files := [
 	"/etc/security/pwquality.conf"
 ]
 
+#
+# shell configs
+#
 bash_config_filenames := [ ".bashrc", ".bash_profile", ".bash_history", ".bash_login", ".bash_logout", ".inputrc", ".profile" ]
 csh_config_filenames := [ ".cshrc", ".login", ".logout", ".history", ".tcshrc", ".cshdirs" ]
 zsh_config_filenames := [ ".zshenv", ".zprofile", ".zshrc", ".zlogin", ".zlogout" ]
@@ -53,34 +62,58 @@ shell_config_files[name] { name := csh_config_files[_] }
 
 shell_config_directories := [ "/etc/zsh" ]
 
+#
+# open shell config files
+#
+open_shell_config_files {
+	name := shell_config_filenames[_]
+	endswith(file, name)
+}
+
+open_shell_config_files {
+	file = shell_config_files[_]
+}
+
+open_shell_config_files {
+	file_inside_directory(shell_config_directories[_])
+}
+
+#
+# shell process
+#
 shell_binaries := [ "ash", "bash", "csh", "ksh", "sh", "tcsh", "zsh", "dash" ]
 
 is_shell_process { input.process.name = shell_binaries[_] }
 
-open_shell_config_files {
-	name := shell_config_filenames[_]
-	endswith(input.event.params["name"], name)
-}
-
-open_shell_config_files {
-	input.event.params["name"] = shell_config_files[_]
-}
-
-open_shell_config_files {
-	dir := shell_config_directories[_]
-	contains(input.event.params["name"], dir)
-}
-
-spawned_process {
-	input.event.name = "execve"
-}
-
+#
+# cron
+#
 update_cron_config {
 	open_write
-	startswith(input.event.params["name"], "/etc/cron")
+	startswith(file, "/etc/cron")
 }
 
 start_crontab {
 	spawned_process
 	input.process.executable = "crontab"
 }
+
+#
+# new process
+#
+spawned_process {
+	input.event.name = "execve"
+}
+
+#
+# files
+#
+file = filename {
+	filename := input.event.params["name"]
+}
+
+file_inside_directory(dir) {
+	# filename starts with directory name
+	startswith(file, dir)
+}
+
