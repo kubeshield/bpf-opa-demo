@@ -64,10 +64,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				}
 				data = data[paramLens[i]:]
 			}
-		case 292: // execve_enter
-			// TODO: do we need this?
-			evt.Params["name"] = string(data[:paramLens[0]-1])
-
 		case 293: // execve_exit
 			var proc Process
 

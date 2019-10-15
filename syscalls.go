@@ -738,16 +738,12 @@ struct ppm_event_entry {
 #define FILLER_REF(x) PPM_FILLER_##x
 
 const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
-	[PPME_SYSCALL_OPEN_E] = {FILLER_REF(sys_empty)},
 	[PPME_SYSCALL_OPEN_X] = {FILLER_REF(sys_open_x)},
-	[PPME_SYSCALL_OPENAT_2_E] = {FILLER_REF(sys_empty)},
 	[PPME_SYSCALL_OPENAT_2_X] = {FILLER_REF(sys_openat_x)},
-	[PPME_SYSCALL_EXECVE_19_E] = {FILLER_REF(sys_execve_e)},
 	[PPME_SYSCALL_EXECVE_19_X] = {FILLER_REF(proc_startupdate)},
 	[PPME_PROCEXIT_1_E] = {FILLER_REF(sys_procexit_e)},
 	[PPME_SYSCALL_RENAME_X] = {FILLER_REF(sys_autofill), 3, APT_REG, {{AF_ID_RETVAL}, {0}, {1} } },
 	[PPME_SYSCALL_RENAMEAT_X] = {FILLER_REF(sys_renameat_x)},
-	[PPME_SYSCALL_MKDIR_2_E] = {FILLER_REF(sys_autofill), 1, APT_REG, {{AF_ID_USEDEFAULT, 0} } },
 	[PPME_SYSCALL_MKDIR_2_X] = {FILLER_REF(sys_autofill), 2, APT_REG, {{AF_ID_RETVAL}, {0} } },
 	[PPME_SYSCALL_MKDIRAT_X] = {FILLER_REF(sys_mkdirat_x)},
 	[PPME_SYSCALL_RMDIR_2_X] = {FILLER_REF(sys_autofill), 2, APT_REG, {{AF_ID_RETVAL}, {0} } },
