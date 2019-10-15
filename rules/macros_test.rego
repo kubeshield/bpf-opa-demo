@@ -163,3 +163,94 @@ test_file {
 test_directory {
     file_inside_directory("/usr/bin") with input as { "event": { "params": { "name": "/usr/bin/crontab" } } }
 }
+
+#
+# test modify
+#
+test_modify {
+	modify with input as { "event" : { "name" : "rename" } }
+}
+test_modify {
+	modify with input as { "event" : { "name" : "rmdir" } }
+}
+
+#
+# test mkdir
+#
+test_mkdir {
+	mkdir with input as { "event" : { "name" : "mkdir" } }
+}
+test_mkdir {
+	mkdir with input as { "event" : { "name" : "mkdirat" } }
+}
+
+#
+# test rpm_procs
+#
+test_rpm_procs {
+	rpm_procs with input as { "process" : { "name" : "salt-minion" } }
+}
+test_rpm_procs {
+	rpm_procs with input as { "process" : { "name" : "dnf" } }
+}
+test_rpm_procs {
+	rpm_procs with input as { "process" : { "name" : "probe_rpminfo" } }
+}
+
+#
+# test package management process
+#
+test_package_management_process {
+	package_management_process with input as { "process" : { "executable" : "dpkg" } }
+}
+test_package_management_process {
+	package_management_process with input as { "process" : { "executable" : "pip" } }
+}
+test_package_management_process {
+	not package_management_process with input as { "process" : { "executable" : "vim" } }
+}
+
+#
+# test access_repositories
+#
+test_access_repositories {
+	access_repositories with input as { "event": { "params" : { "name" : "sources.list" } } }
+}
+test_access_repositories {
+	not access_repositories with input as { "event": { "params" : { "name" : "test" } } }
+}
+test_access_repositories {
+	access_repositories with input as { "event": { "params" : { "name" : "/etc/apt/sources.list.d/test" } } }
+}
+
+#
+# test modify_repositories
+#
+test_modify_repositories {
+	modify_repositories with input as { "event": { "params" : { "pathname" : "/etc/apt/sources.list.d/test" } } }
+}
+test_modify_repositories {
+	not modify_repositories with input as { "event": { "params" : { "pathname" : "test" } } }
+}
+
+#
+# test write_repository
+#
+test_write_repository {
+	write_repository with input as { "event" : { "name": "open", "params" : { "name" : "sources.list", "fd" : 1, "flags" : 2 } } }
+}
+test_write_repository_not_open_write {
+	not write_repository with input as { "event" : { "name": "open", "params" : { "name": "sources.list", "fd" : 1, "flags" : 0 } } }
+}
+test_write_repository_not_sources_list {
+	not write_repository with input as { "event" : { "name": "open", "params" : { "name": "test", "fd" : 1, "flags" : 2 } } }
+}
+test_write_repository {
+	write_repository with input as { "event": { "name" : "rename", "params" : { "pathname" : "/etc/apt/sources.list.d/test" } } }
+}
+test_write_repository_not_modify {
+	not write_repository with input as { "event": { "name" : "mkdir", "params" : { "pathname" : "/etc/apt/sources.list.d/test" } } }
+}
+test_write_repository_not_write_repo {
+	not write_repository with input as { "event": { "name" : "rename", "params" : { "pathname" : "test" } } }
+}

@@ -35,7 +35,7 @@ schedule_cron_jobs = input {
 	start_crontab
 }
 
-update_packeg_repository = input {
+update_package_repository = input {
 	write_repository
 	not package_management_process
 }

@@ -54,3 +54,16 @@ test_schedule_cron_jobs {
 test_schedule_cron_jobs {
 	schedule_cron_jobs with input as { "event" : { "name": "execve" }, "process" : { "executable" : "crontab" } }
 }
+
+#
+# test update_package_repository
+#
+test_update_package_repository {
+	update_package_repository with input as { "event" : { "name": "open", "params" : { "name" : "sources.list", "fd" : 1, "flags" : 2 } }, "process" : { "executable": "vim" } }
+}
+test_update_package_repository_valid_process {
+	not update_package_repository with input as { "event" : { "name": "open", "params" : { "name" : "sources.list", "fd" : 1, "flags" : 2 } }, "process" : { "executable": "dpkg" } }
+}
+test_update_package_repository_not_write_repo {
+	not update_package_repository with input as { "event" : { "name": "open", "params" : { "name" : "test", "fd" : 1, "flags" : 2 } }, "process" :{ "executable":  "vim" }}
+}

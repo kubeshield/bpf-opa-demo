@@ -181,6 +181,7 @@ package_mgmt_binaries[bin] {
 }
 
 package_management_process {
+	# TODO: is it correct?
 	input.process.executable = package_mgmt_binaries[_]
 }
 
