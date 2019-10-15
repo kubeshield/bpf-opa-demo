@@ -117,3 +117,96 @@ file_inside_directory(dir) {
 	startswith(file, dir)
 }
 
+#
+# modify
+#
+rename_syscalls := [ "rename", "renameat" ]
+rename {
+	input.event.name = rename_syscalls[_]
+}
+
+mkdir_syscalls := [ "mkdir", "mkdirat" ]
+mkdir {
+	input.event.name = mkdir_syscalls[_]
+}
+
+remove_syscalls := [ "rmdir", "unlink", "unlinkat" ]
+remove {
+	input.event.name = remove_syscalls[_]
+}
+
+modify {
+	rename
+}
+modify {
+	remove
+}
+
+#
+# package management binaries
+#
+rpm_binaries := [
+	"dnf", "rpm", "rpmkey", "yum", "75-system-updat", "rhsmcertd-worke", "subscription-ma",
+    "repoquery", "rpmkeys", "rpmq", "yum-cron", "yum-config-mana", "yum-debug-dump",
+    "abrt-action-sav", "rpmdb_stat", "microdnf", "rhn_check", "yumdb"
+]
+
+openscap_rpm_binaries := [ "probe_rpminfo", "probe_rpmverify", "probe_rpmverifyfile", "probe_rpmverifypackage" ]
+
+rpm_procs {
+	input.process.name = rpm_binaries[_]
+}
+rpm_procs {
+	input.process.name = openscap_rpm_binaries[_]
+}
+rpm_procs {
+	input.process.name = "salt-minion"
+}
+
+deb_binaries := [
+	"dpkg", "dpkg-preconfigu", "dpkg-reconfigur", "dpkg-divert", "apt", "apt-get", "aptitude",
+    "frontend", "preinst", "add-apt-reposit", "apt-auto-remova", "apt-key",
+    "apt-listchanges", "unattended-upgr", "apt-add-reposit", "apt-config", "apt-cache"
+]
+
+package_mgmt_binaries[bin] {
+	bin := rpm_binaries[_]
+}
+package_mgmt_binaries[bin] {
+	bin := deb_binaries[_]
+}
+package_mgmt_binaries[bin] {
+    bins := [ "update-alternative", "gem", "pip", "pip3", "sane-utils.post", "alternatives", "chef-client", "apk" ]
+	bin := bins[_]
+}
+
+package_management_process {
+	input.process.executable = package_mgmt_binaries[_]
+}
+
+#
+# update repository
+#
+repository_files := [ "sources.list" ]
+repository_directories := ["/etc/apt/sources.list.d", "/etc/yum.repos.d" ]
+
+access_repositories {
+	endswith(file, repository_files[_])
+}
+access_repositories {
+	file_inside_directory(repository_directories[_])
+}
+
+write_repository {
+	open_write
+	access_repositories
+}
+write_repository {
+	modify
+	modify_repositories
+}
+
+modify_repositories {
+	# TODO: fix pathname for absolute path
+	startswith(input.event.params.pathname, repository_directories[_])
+}
