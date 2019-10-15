@@ -166,6 +166,99 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
 				}
 			}
+		case 277: // mkdir exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			// oneliners.PrettyJson(evt)
+		case 305: // mkdirat exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+				case 3:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+				}
+			}
+			// oneliners.PrettyJson(evt)
+		case 279: // rmdir exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			// oneliners.PrettyJson(evt)
+		case 301: // unlink exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			// oneliners.PrettyJson(evt)
+		case 303: // unlinkat exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+				case 3:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+				}
+			}
+			// oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
