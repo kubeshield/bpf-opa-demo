@@ -47,16 +47,17 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 			continue
 		}
 
-		processMapLock.RLock()
-		proc, ok := processMap[evt.Tid]
-		processMapLock.RUnlock()
-
-		if !ok {
-			go func() {
+		var proc Process
+		var ok bool
+		for i := 0; i < 10; i++ {
+			processMapLock.RLock()
+			proc, ok = processMap[evt.Tid]
+			processMapLock.RUnlock()
+			if !ok {
 				time.Sleep(time.Millisecond * 100)
-				opaQueryCh <- evt
-			}()
-			continue
+			} else {
+				break
+			}
 		}
 
 		evt.Name = getSyscallName(int(evt.Type))
@@ -67,6 +68,7 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 				Process: &proc,
 			},
 		}
+		// oneliners.PrettyJson(req)
 
 		reqBytes, err := json.Marshal(req)
 		if err != nil {
