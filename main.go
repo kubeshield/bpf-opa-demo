@@ -7,7 +7,6 @@ import (
 	"flag"
 	"os"
 	"strings"
-	"time"
 	"unsafe"
 
 	"github.com/iovisor/gobpf/elf"
@@ -75,14 +74,14 @@ func main() {
 		panic(err)
 	}
 
+	loadAllProcess()
+
 	perfMap, err := readFromPerfMap(module)
 	if err != nil {
 		logger.Error(err, "error reading from perf map")
 		panic(err)
 	}
 	defer perfMap.PollStop()
-
-	loadAllProcess()
 
 	sig := make(chan os.Signal)
 	<-sig
@@ -210,9 +209,6 @@ func processPerfEventData(evtDataCh chan []byte) {
 }
 
 func loadAllProcess() {
-	// wait for all go-routines to start
-	time.Sleep(time.Second * 5)
-
 	procs, err := procfs.AllProcs()
 	if err != nil {
 		logger.Error(err, "failed to read /proc")
@@ -239,11 +235,20 @@ func loadAllProcess() {
 			logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
 		}
 
+		var command string
+		var args []string
+		if len(cmdline) > 0 {
+			command = cmdline[0]
+			args = cmdline[1:]
+		}
+
 		process := Process{
 			Name:       name,
 			Executable: executable,
-			Args:       cmdline,
+			Args:       args,
+			Command:    command,
 			Cgroup:     []string{containerID},
+			Pid:        uint64(p.PID),
 		}
 
 		processMapLock.Lock()

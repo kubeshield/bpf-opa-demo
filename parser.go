@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 )
 
 var (
@@ -115,12 +116,16 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
-			logger.V(4).Info("", "proc", evt)
+			// oneliners.PrettyJson(proc)
 
 		case 186: // procexit
-			processMapLock.Lock()
-			delete(processMap, evt.Tid)
-			processMapLock.Unlock()
+			go func() {
+				// wait 1 second before deleting process from map
+				time.Sleep(time.Second)
+				processMapLock.Lock()
+				delete(processMap, evt.Tid)
+				processMapLock.Unlock()
+			}()
 
 		case 175: // rename exit
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {

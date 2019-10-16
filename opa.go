@@ -8,7 +8,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"time"
 
 	"github.com/the-redback/go-oneliners"
 )
@@ -36,6 +35,7 @@ type Process struct {
 	Args       []string `json:"args"`
 	Command    string   `json:"command"`
 	Cgroup     []string `json:"cgroup"`
+	Parent     *Process `json:"parent"`
 }
 
 // func queryToOPA(evt *syscallEvent) {
@@ -47,18 +47,12 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 			continue
 		}
 
-		var proc Process
-		var ok bool
-		for i := 0; i < 10; i++ {
-			processMapLock.RLock()
-			proc, ok = processMap[evt.Tid]
-			processMapLock.RUnlock()
-			if !ok {
-				time.Sleep(time.Millisecond * 100)
-			} else {
-				break
-			}
-		}
+		processMapLock.RLock()
+		proc := processMap[evt.Tid]
+		parent := processMap[proc.Ppid]
+		processMapLock.RUnlock()
+
+		proc.Parent = &parent
 
 		evt.Name = getSyscallName(int(evt.Type))
 
