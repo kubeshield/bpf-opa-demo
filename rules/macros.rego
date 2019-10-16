@@ -211,3 +211,34 @@ modify_repositories {
 	# TODO: fix pathname for absolute path
 	startswith(input.event.params.pathname, repository_directories[_])
 }
+
+#
+# bin directories
+#
+bin_dirs := [ "/bin", "/sbin", "/usr/bin", "/usr/sbin" ]
+
+bin_dir {
+	file_inside_directory(bin_dirs[_])
+}
+
+#
+# python
+#
+python_running_get_pip {
+	input.process.command = "python"
+	input.process.args[0] = "get-pop.py"
+}
+python_running_ms_oms {
+	input.process.command = "python"
+	input.process.args[0] = "/var/lib/waagnet/"
+}
+
+#
+# docker
+#
+#docker_process := [ "docker", "dockerd" ]
+#exe_running_docker_save {
+	#startswith(input.process.cmdline, "exe /var/lib/docker")
+	# TODO
+	#input.process.pname is (dockerd, docker))
+#}

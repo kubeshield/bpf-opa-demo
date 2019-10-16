@@ -67,3 +67,16 @@ test_update_package_repository_valid_process {
 test_update_package_repository_not_write_repo {
 	not update_package_repository with input as { "event" : { "name": "open", "params" : { "name" : "test", "fd" : 1, "flags" : 2 } }, "process" :{ "executable":  "vim" }}
 }
+
+#
+# test write bin dir
+#
+test_write_bin_dir {
+	write_binary_dir with input as { "event" : { "name": "open", "params" : { "name": "/bin", "fd" : 1, "flags" : 2 } }, "process" : { "executable" : "cp" } }
+}
+test_write_bin_dir_not_wrte {
+	not write_binary_dir with input as { "event" : { "name": "not_write", "params" : { "name": "/bin", "fd" : 1, "flags" : 2 } }, "process" : { "executable" : "cp" } }
+}
+test_write_bin_dir_pkg_bin {
+	not write_binary_dir with input as { "event" : { "name": "open", "params" : { "name": "/bin", "fd" : 1, "flags" : 2 } }, "process" : { "executable" : "dpkg" } }
+}

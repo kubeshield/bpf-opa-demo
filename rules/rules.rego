@@ -9,6 +9,8 @@ import data.macros.update_cron_config
 import data.macros.start_crontab
 import data.macros.write_repository
 import data.macros.package_management_process
+import data.macros.bin_dir
+import data.macros.python_running_get_pip
 
 open_sensitive_files = input {
 	open_read
@@ -39,3 +41,21 @@ update_package_repository = input {
 	write_repository
 	not package_management_process
 }
+
+write_binary_dir = input {
+	bin_dir
+	open_write
+	not package_management_process
+    not python_running_get_pip
+}
+
+#- rule: Write below binary dir
+#  desc: an attempt to write to any file below a set of binary directories
+#  condition: >
+#    and not exe_running_docker_save
+#    and not python_running_ms_oms
+#  output: >
+#    File below a known binary directory opened for writing (user=%user.name
+#    command=%proc.cmdline file=%fd.name parent=%proc.pname pcmdline=%proc.pcmdline gparent=%proc.aname[2] container_id=%container.id image=%container.image.repository)
+#  priority: ERROR
+#  tags: [filesystem, mitre_persistence]

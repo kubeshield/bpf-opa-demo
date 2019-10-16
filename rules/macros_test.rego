@@ -254,3 +254,43 @@ test_write_repository_not_modify {
 test_write_repository_not_write_repo {
 	not write_repository with input as { "event": { "name" : "rename", "params" : { "pathname" : "test" } } }
 }
+
+#
+# test bin_dir
+#
+test_bin_dir_true {
+	bin_dir with input as { "event" : { "params" : { "name" : "/bin" } } }
+}
+test_bin_dir_false {
+	not bin_dir with input as { "event" : { "params" : { "name" : "/test" } } }
+}
+
+#
+# test python pip
+#
+test_python_running_get_pip {
+	python_running_get_pip with input as { "process" : { "command" : "python", "args": [ "get-pop.py" ] } }
+}
+test_python_running_get_pip {
+	not python_running_get_pip with input as { "process" : { "command" : "python", "args": [ "help" ] } }
+}
+
+#
+# test python ms oms
+#
+test_python_running_ms_oms {
+	python_running_ms_oms with input as { "process" : { "command" : "python", "args": [ "/var/lib/waagnet/" ] } }
+}
+test_python_running_ms_oms_false {
+	not python_running_ms_oms with input as { "process" : { "command" : "python", "args": [ "test" ] } }
+}
+
+#
+# test docker process
+#
+# TODO:
+#test_exe_running_docker_save {
+#	exe_running_docker_save with input as { "process" : { "command" : "docker", "args": [ "/var/lib/waagnet/" ] } }
+#	startswith(input.process.cmdline, "exe /var/lib/docker")
+#	input.process.parent.command = docker_process[_]
+#}
