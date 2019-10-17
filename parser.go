@@ -10,6 +10,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/the-redback/go-oneliners"
 )
 
 var (
@@ -260,6 +262,46 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				}
 			}
 			// oneliners.PrettyJson(evt)
+		case 179: //symlink
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["target"] = string(rawParams[:paramLens[i]-1])
+				case 2:
+					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			oneliners.PrettyJson(evt)
+		case 181: //symlinkat
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["target"] = string(rawParams[:paramLens[i]-1])
+				case 2:
+					evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 3:
+					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
