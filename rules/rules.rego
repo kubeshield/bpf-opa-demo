@@ -13,6 +13,8 @@ import data.macros.bin_dir
 import data.macros.python_running_get_pip
 import data.macros.create_symlink
 import data.macros.symlink_target_in_sensitive_file
+import data.macros.spawned_process
+import data.macros.remote_copy_procs
 
 open_sensitive_files = input {
 	open_read
@@ -54,4 +56,12 @@ write_binary_dir = input {
 create_sysmlink_over_sensitive_files = input {
 	create_symlink
 	symlink_target_in_sensitive_file
+}
+
+launch_remote_file_copy_tool_in_container {
+	spawned_process
+	# TODO:
+	# container //checks if inside container
+	remote_copy_procs
+
 }

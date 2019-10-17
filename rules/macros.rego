@@ -261,3 +261,8 @@ symlink_target_in_sensitive_file {
 	file_inside_given_directory(input.event.params.target, sensitive_directory_names[_])
 }
 
+remote_file_copy_binaries := [ "rsync", "scp", "sftp", "dcp" ]
+remote_file_copy_procs {
+    input.process.name = remote_file_copy_binaries[_]
+}
+
