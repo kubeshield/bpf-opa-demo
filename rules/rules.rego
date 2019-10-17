@@ -11,6 +11,8 @@ import data.macros.write_repository
 import data.macros.package_management_process
 import data.macros.bin_dir
 import data.macros.python_running_get_pip
+import data.macros.create_symlink
+import data.macros.symlink_target_in_sensitive_file
 
 open_sensitive_files = input {
 	open_read
@@ -49,13 +51,7 @@ write_binary_dir = input {
     not python_running_get_pip
 }
 
-#- rule: Write below binary dir
-#  desc: an attempt to write to any file below a set of binary directories
-#  condition: >
-#    and not exe_running_docker_save
-#    and not python_running_ms_oms
-#  output: >
-#    File below a known binary directory opened for writing (user=%user.name
-#    command=%proc.cmdline file=%fd.name parent=%proc.pname pcmdline=%proc.pcmdline gparent=%proc.aname[2] container_id=%container.id image=%container.image.repository)
-#  priority: ERROR
-#  tags: [filesystem, mitre_persistence]
+create_sysmlink_over_sensitive_files = input {
+	create_symlink
+	symlink_target_in_sensitive_file
+}

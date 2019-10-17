@@ -42,6 +42,7 @@ sensitive_files := [
 	"/etc/pam.conf",
 	"/etc/security/pwquality.conf"
 ]
+sensitive_directory_names := [ "/", "/etc", "/etc/", "/root", "/root/" ]
 
 #
 # shell configs
@@ -115,6 +116,10 @@ file = filename {
 file_inside_directory(dir) {
 	# filename starts with directory name
 	startswith(file, dir)
+}
+
+file_inside_given_directory(filename, dir) {
+	startswith(filename, dir)
 }
 
 #
@@ -242,3 +247,17 @@ python_running_ms_oms {
 	# TODO
 	#input.process.pname is (dockerd, docker))
 #}
+
+symlink_syscalls := [ "symlink", "symlinkat" ]
+
+create_symlink {
+	input.event.name = symlink_syscalls[_]
+}
+
+symlink_target_in_sensitive_file {
+	input.event.params.target = sensitive_files[_]
+}
+symlink_target_in_sensitive_file {
+	file_inside_given_directory(input.event.params.target, sensitive_directory_names[_])
+}
+
