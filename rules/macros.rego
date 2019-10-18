@@ -29,8 +29,13 @@ is_open_read {
 	round((input.event.params.flags-0.1) / O_RDONLY) % 2 > 0
 }
 
+is_open_create {
+	round((input.event.params.flags-0.1) / O_CREAT) % 2 > 0
+}
+
 O_RDONLY := 1
 O_WRONLY := 2
+O_CREAT  := 4
 
 
 #
@@ -266,3 +271,22 @@ remote_file_copy_procs {
     input.process.name = remote_file_copy_binaries[_]
 }
 
+rename_to_hidden_file {
+	rename
+	contains(input.event.params.newpath, "/.")
+}
+mkdir_hidden_directory {
+	mkdir
+	contains(input.event.params.pathname, "/.")
+}
+create_hidden_file {
+	open_write
+	is_open_create
+	contains(file, "/.")
+	not file_inside_excluded_hidden_directory
+}
+
+exclude_hidden_directories := [ "/root/.cassandra" ]
+file_inside_excluded_hidden_directory = {
+	file_inside_directory(exclude_hidden_directories[_])
+}

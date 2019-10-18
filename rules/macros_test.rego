@@ -163,6 +163,9 @@ test_file {
 test_directory {
     file_inside_directory("/usr/bin") with input as { "event": { "params": { "name": "/usr/bin/crontab" } } }
 }
+test_directory {
+    not file_inside_directory("/usr/bin") with input as { "event": { "params": { "name": "/usr/crontab" } } }
+}
 
 #
 # test modify

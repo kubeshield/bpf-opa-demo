@@ -15,6 +15,9 @@ import data.macros.create_symlink
 import data.macros.symlink_target_in_sensitive_file
 import data.macros.spawned_process
 import data.macros.remote_copy_procs
+import data.macros.rename_to_hidden_file
+import data.macros.mkdir_hidden_directory
+import data.macros.create_hidden_file
 
 open_sensitive_files = input {
 	open_read
@@ -64,4 +67,14 @@ launch_remote_file_copy_tool_in_container {
 	# container //checks if inside container
 	remote_copy_procs
 
+}
+
+create_hidden_file_or_directory = input {
+	rename_to_hidden_file
+}
+create_hidden_file_or_directory = input {
+	mkdir_hidden_directory
+}
+create_hidden_file_or_directory = input {
+	create_hidden_file
 }
