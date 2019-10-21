@@ -290,3 +290,26 @@ exclude_hidden_directories := [ "/root/.cassandra" ]
 file_inside_excluded_hidden_directory = {
 	file_inside_directory(exclude_hidden_directories[_])
 }
+
+chmod_syscalls := [ "chmod", "fchmod", "fchmodat" ]
+
+S_ISGID := 1024 #(1 << 10)
+S_ISUID := 2048 #(1 << 11)
+
+is_setuid {
+	round((input.event.params.mode-0.1) / S_ISUID) % 2 > 0
+}
+is_setgid {
+	round((input.event.params.mode-0.1) / S_ISGID) % 2 > 0
+}
+is_setuid_or_setgid {
+	is_setuid
+}
+is_setuid_or_setgid {
+	is_setgid
+}
+
+chmod {
+	input.event.name = chmod_syscalls[_]
+}
+

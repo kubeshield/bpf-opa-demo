@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/the-redback/go-oneliners"
 )
 
@@ -280,7 +281,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
 				}
 			}
-			oneliners.PrettyJson(evt)
+			// oneliners.PrettyJson(evt)
 		case 181: //symlinkat
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
@@ -299,6 +300,68 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
 				case 3:
 					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
+				}
+			}
+			// oneliners.PrettyJson(evt)
+		case 315: //chmod
+			spew.Dump(paramLens)
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
+				case 2:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+				}
+			}
+			oneliners.PrettyJson(evt)
+		case 317: //fchmod
+			spew.Dump(paramLens)
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+				}
+			}
+			oneliners.PrettyJson(evt)
+		case 313: //fchmodat
+			spew.Dump(paramLens)
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					evt.Params["dfd"] = binary.LittleEndian.Uint64(rawParams)
+				case 2:
+					evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
+				case 3:
+					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
 				}
 			}
 			oneliners.PrettyJson(evt)

@@ -18,6 +18,8 @@ import data.macros.remote_copy_procs
 import data.macros.rename_to_hidden_file
 import data.macros.mkdir_hidden_directory
 import data.macros.create_hidden_file
+import data.macros.chmod
+import data.macros.is_setuid_or_setgid
 
 open_sensitive_files = input {
 	open_read
@@ -77,4 +79,9 @@ create_hidden_file_or_directory = input {
 }
 create_hidden_file_or_directory = input {
 	create_hidden_file
+}
+
+set_setuid_or_setgid_bit {
+	chmod
+	is_setuid_or_setgid
 }

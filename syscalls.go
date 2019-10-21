@@ -751,6 +751,9 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_UNLINKAT_2_X] = {FILLER_REF(sys_unlinkat_x)},
 	[PPME_SYSCALL_SYMLINK_X] = {FILLER_REF(sys_autofill), 3, APT_REG, {{AF_ID_RETVAL}, {0}, {1} } },
 	[PPME_SYSCALL_SYMLINKAT_X] = {FILLER_REF(sys_symlinkat_x)},
+	[PPME_SYSCALL_CHMOD_X] = {FILLER_REF(sys_chmod_x)},
+	[PPME_SYSCALL_FCHMOD_X] = {FILLER_REF(sys_fchmod_x)},
+	[PPME_SYSCALL_FCHMODAT_X] = {FILLER_REF(sys_fchmodat_x)},
 };
 
 
