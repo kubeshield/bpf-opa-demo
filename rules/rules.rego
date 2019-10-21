@@ -20,6 +20,8 @@ import data.macros.mkdir_hidden_directory
 import data.macros.create_hidden_file
 import data.macros.chmod
 import data.macros.is_setuid_or_setgid
+import data.macros.delete_shell_history
+import data.macros.rename_shell_history
 
 open_sensitive_files = input {
 	open_read
@@ -81,7 +83,23 @@ create_hidden_file_or_directory = input {
 	create_hidden_file
 }
 
-set_setuid_or_setgid_bit {
+set_setuid_or_setgid_bit = input {
 	chmod
 	is_setuid_or_setgid
 }
+
+delete_or_rename_shell_history = input {
+	delete_shell_history
+}
+delete_or_rename_shell_history = input {
+	rename_shell_history
+}
+
+#- rule: Remove Bulk Data from Disk
+#  desc: Detect process running to clear bulk data from disk
+#  condition: spawned_process and clear_data_procs
+#  output: >
+#    Bulk data has been removed from disk (user=%user.name command=%proc.cmdline file=%fd.name container_id=%container.id image=%container.image.repository)
+#  priority:
+#    WARNING
+#  tags: [process, mitre_persistence]

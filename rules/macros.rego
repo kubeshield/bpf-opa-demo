@@ -32,10 +32,14 @@ is_open_read {
 is_open_create {
 	round((input.event.params.flags-0.1) / O_CREAT) % 2 > 0
 }
+o_trunc_flag_set {
+	round((input.event.params.flags-0.1) / O_TRUNC) % 2 > 0
+}
 
 O_RDONLY := 1
 O_WRONLY := 2
 O_CREAT  := 4
+O_TRUNC  := 256
 
 
 #
@@ -313,3 +317,24 @@ chmod {
 	input.event.name = chmod_syscalls[_]
 }
 
+shell_history_files := [ "bash_history", "zsh_history", "fish_read_history", "fish_history" ]
+
+delete_shell_history {
+	open_write
+	o_trunc_flag_set
+	contains(file, shell_history_files[_])
+}
+rename_shell_history {
+	modify
+	modify_shell_history
+}
+
+modify_shell_history {
+	contains(input.event.params.name, shell_history_files[_])
+}
+modify_shell_history {
+	contains(input.event.params.oldpath, shell_history_files[_])
+}
+modify_shell_history {
+	contains(input.event.params.pathname, shell_history_files[_])
+}
