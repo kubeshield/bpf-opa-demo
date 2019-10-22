@@ -25,6 +25,8 @@ import data.macros.rename_shell_history
 import data.macros.data_remove_process
 import data.macros.access_log_files
 import data.macros.o_trunc_flag_set
+import data.macros.search_private_key
+import data.macros.search_password
 
 open_sensitive_files = input {
 	open_read
@@ -110,3 +112,11 @@ clear_log_activities = input {
 	#TODO
 	#not trusted_logging_image
 }
+
+search_private_key_or_password = input {
+	search_private_key
+}
+search_private_key_or_password = input {
+	search_password
+}
+

@@ -358,3 +358,31 @@ access_log_files {
 #	(container.image.repository endswith "splunk/fluentd-hec")
 #}
 
+grep_binaries := [ "grep", "egrep", "fgrep" ]
+
+grep_commands {
+	input.process.command = grep_binaries[_]
+}
+
+search_private_key {
+	contains(input.process.args[_], "BEGIN PRIVATE")
+}
+search_private_key {
+	contains(input.process.args[_], "BEGIN RSA PRIVATE")
+}
+search_private_key {
+	contains(input.process.args[_], "BEGIN DSA PRIVATE")
+}
+search_private_key {
+	contains(input.process.args[_], "BEGIN EC PRIVATE")
+}
+
+search_password {
+	contains(input.process.args[_], "pass")
+}
+search_password {
+	contains(input.process.args[_], "ssh")
+}
+search_password {
+	contains(input.process.args[_], "user")
+}
