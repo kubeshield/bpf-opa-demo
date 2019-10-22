@@ -386,3 +386,10 @@ search_password {
 search_password {
 	contains(input.process.args[_], "user")
 }
+
+network_tool_binaries := [ "nc", "ncat", "nmap", "dig", "tcpdump", "tshark", "ngrep" ]
+
+network_tool_procs {
+	input.process.command = network_tool_binaries[_]
+}
+

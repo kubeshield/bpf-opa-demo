@@ -120,3 +120,7 @@ search_private_key_or_password = input {
 	search_password
 }
 
+Launch_Suspicious_Network_Tool = input {
+    spawned_process
+    network_tool_procs
+}
