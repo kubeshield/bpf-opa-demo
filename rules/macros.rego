@@ -15,6 +15,15 @@ open_read {
 	input.event.params["fd"] >= 0
 }
 
+open_create {
+	open_event
+	is_open_create
+	input.event.params["fd"] >= 0
+}
+open_create {
+	input.event.name = "creat"
+}
+
 open_event {
 	input.event.name = open_syscalls[_]
 }
@@ -426,3 +435,17 @@ ncat_arg_contains_exe {
      contains(input.process.args[_], "--lua-exec")
 }
 
+allowed_dev_files := [
+	"/dev/null", "/dev/stdin", "/dev/stdout", "/dev/stderr",
+	"/dev/random", "/dev/urandom", "/dev/console", "/dev/kmsg"
+]
+dev_creation_binaries := [ "blkid", "rename_device", "update_engine", "sgdisk" ]
+
+
+dev_creation_process {
+	input.process.command = dev_creation_binaries[_]
+}
+
+open_allowed_dev_files {
+	file = allowed_dev_files[_]
+}

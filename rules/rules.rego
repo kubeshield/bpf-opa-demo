@@ -30,6 +30,10 @@ import data.macros.search_password
 import data.macros.network_tool_procs
 import data.macros.nc_process
 import data.macros.ncat_process
+import data.macros.open_create
+import data.macros.dev_creation_process
+import data.macros.open_allowed_dev_files
+import data.macros.file
 
 open_sensitive_files = input {
 	open_read
@@ -133,4 +137,14 @@ Netcat_Remote_Code_Execution = input {
 }
 Netcat_Remote_Code_Execution = input {
 	ncat_process
+}
+
+# (we may need to add additional checks against false positives, see:
+# https://bugs.launchpad.net/ubuntu/+source/rkhunter/+bug/86153)
+Create_files_below_dev = input {
+	startswith(file, "/dev")
+	open_create
+	not dev_creation_process
+	not startswith(file, "/dev/tty")
+	not open_allowed_dev_files
 }
