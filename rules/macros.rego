@@ -341,3 +341,20 @@ modify_shell_history {
 
 data_remove_process := [ "shred", "mkfs", "mke2fs" ]
 
+
+log_directories := [ "/var/log", "/dev/log" ]
+
+log_files := [ "syslog", "auth.log", "secure", "kern.log", "cron", "user.log", "dpkg.log", "last.log", "yum.log", "access_log", "mysql.log", "mysqld.log" ]
+
+access_log_files {
+	startswith(file, log_directories[_])
+}
+access_log_files {
+	endswith(file, log_files[_])
+}
+
+# TODO
+#trusted_logging_images {
+#	(container.image.repository endswith "splunk/fluentd-hec")
+#}
+

@@ -23,6 +23,8 @@ import data.macros.is_setuid_or_setgid
 import data.macros.delete_shell_history
 import data.macros.rename_shell_history
 import data.macros.data_remove_process
+import data.macros.access_log_files
+import data.macros.o_trunc_flag_set
 
 open_sensitive_files = input {
 	open_read
@@ -99,4 +101,12 @@ delete_or_rename_shell_history = input {
 remove_bulk_data_from_disk = input {
 	spawned_process
 	input.process.command = data_remove_process[_]
+}
+
+clear_log_activities = input {
+	open_write
+	access_log_files
+	o_trunc_flag_set
+	#TODO
+	#not trusted_logging_image
 }

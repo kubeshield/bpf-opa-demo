@@ -62,7 +62,6 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 				Process: &proc,
 			},
 		}
-		// oneliners.PrettyJson(req)
 
 		reqBytes, err := json.Marshal(req)
 		if err != nil {
