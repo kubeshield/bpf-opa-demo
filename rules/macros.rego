@@ -393,3 +393,36 @@ network_tool_procs {
 	input.process.command = network_tool_binaries[_]
 }
 
+
+nc_process {
+	input.process.name = "nc"
+	nc_with_e_or_c
+}
+
+nc_with_e_or_c {
+	contains(input.process.args[_], "-e")
+}
+nc_with_e_or_c {
+	contains(input.process.args[_], "-c")
+}
+
+ncat_process {
+	input.process.name = "ncat"
+	ncat_arg_contains_exe
+}
+ncat_arg_contains_exe {
+     contains(input.process.args[_], "--sh-exec")
+}
+ncat_arg_contains_exe {
+     contains(input.process.args[_], "--exec")
+}
+ncat_arg_contains_exe {
+     contains(input.process.args[_], "-e ")
+}
+ncat_arg_contains_exe {
+     contains(input.process.args[_], "-c ")
+}
+ncat_arg_contains_exe {
+     contains(input.process.args[_], "--lua-exec")
+}
+

@@ -27,6 +27,9 @@ import data.macros.access_log_files
 import data.macros.o_trunc_flag_set
 import data.macros.search_private_key
 import data.macros.search_password
+import data.macros.network_tool_procs
+import data.macros.nc_process
+import data.macros.ncat_process
 
 open_sensitive_files = input {
 	open_read
@@ -123,4 +126,11 @@ search_private_key_or_password = input {
 Launch_Suspicious_Network_Tool = input {
     spawned_process
     network_tool_procs
+}
+
+Netcat_Remote_Code_Execution = input {
+	nc_process
+}
+Netcat_Remote_Code_Execution = input {
+	ncat_process
 }
