@@ -22,6 +22,7 @@ import data.macros.chmod
 import data.macros.is_setuid_or_setgid
 import data.macros.delete_shell_history
 import data.macros.rename_shell_history
+import data.macros.data_remove_process
 
 open_sensitive_files = input {
 	open_read
@@ -95,11 +96,7 @@ delete_or_rename_shell_history = input {
 	rename_shell_history
 }
 
-#- rule: Remove Bulk Data from Disk
-#  desc: Detect process running to clear bulk data from disk
-#  condition: spawned_process and clear_data_procs
-#  output: >
-#    Bulk data has been removed from disk (user=%user.name command=%proc.cmdline file=%fd.name container_id=%container.id image=%container.image.repository)
-#  priority:
-#    WARNING
-#  tags: [process, mitre_persistence]
+remove_bulk_data_from_disk = input {
+	spawned_process
+	input.process.command = data_remove_process[_]
+}

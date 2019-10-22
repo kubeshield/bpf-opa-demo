@@ -338,3 +338,6 @@ modify_shell_history {
 modify_shell_history {
 	contains(input.event.params.pathname, shell_history_files[_])
 }
+
+data_remove_process := [ "shred", "mkfs", "mke2fs" ]
+
