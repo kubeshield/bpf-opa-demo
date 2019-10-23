@@ -449,3 +449,31 @@ dev_creation_process {
 open_allowed_dev_files {
 	file = allowed_dev_files[_]
 }
+
+user_mgmt_binaries := ["login_binaries", "passwd_binaries", "shadowutils_binaries" ]
+allowed_user_mgmt_binaries := [ "su", "sudo", "lastlog", "nologin", "unix_chkpwd" ]
+run_allowed_user_mgmt_binaries {
+	input.process.command = allowed_user_mgmt_binaries[_]
+}
+
+allowed_parents := [ "systemd", "systemd.postins", "udev.postinst", "run-parts", "cron", "crontab" ]
+run_parent_allowed_user_mgmt_binaries {
+	input.process.parent.command = allowed_user_mgmt_binaries[_]
+}
+
+User_mgmt_binaries {
+    spawned_process
+    input.process.command = user_mgmt_binaries[_]
+    not run_allowed_user_mgmt_binaries
+    not run_parent_allowed_user_mgmt_binaries
+    #TODO
+    #not container
+    #not startswith(input.process.cmdline, "passwd -S")
+    #not startswith(input.process.cmdline,"useradd -D")
+    #not startswith(input.process.cmdline, "systemd --version")
+    #not run_by_qualys
+    #not run_by_sumologic_securefiles
+    #not run_by_yum
+    #not run_by_ms_oms
+    #not run_by_google_accounts_daemon
+}
