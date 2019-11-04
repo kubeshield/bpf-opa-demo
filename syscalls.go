@@ -754,6 +754,7 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SYSCALL_CHMOD_X] = {FILLER_REF(sys_chmod_x)},
 	[PPME_SYSCALL_FCHMOD_X] = {FILLER_REF(sys_fchmod_x)},
 	[PPME_SYSCALL_FCHMODAT_X] = {FILLER_REF(sys_fchmodat_x)},
+	[PPME_SOCKET_SOCKET_X] = {FILLER_REF(sys_socket_x), 3, APT_SOCK, {{0}, {1}, {2} } },
 };
 
 
@@ -1973,7 +1974,9 @@ const struct ppm_event_info g_event_info[PPM_EVENT_MAX] = {
 	{"procexit", EC_PROCESS, EF_MODIFIES_STATE | EF_OLD_VERSION, 0},
 	{"NA1", EC_PROCESS, EF_UNUSED, 0},
 	{"socket", EC_NET, EF_CREATES_FD | EF_MODIFIES_STATE, 3, {{"domain", PT_FLAGS32, PF_DEC, socket_families}, {"type", PT_UINT32, PF_DEC}, {"proto", PT_UINT32, PF_DEC} } },
-	{"socket", EC_NET, EF_CREATES_FD | EF_MODIFIES_STATE, 1, {{"fd", PT_FD, PF_DEC} } },
+	{"socket", EC_NET, EF_CREATES_FD | EF_MODIFIES_STATE, 4, {{"fd", PT_FD, PF_DEC}, {"domain", PT_FLAGS32, PF_DEC, socket_families}, {"type", PT_UINT32, PF_DEC}, {"proto", PT_UINT32, PF_DEC} } },
+	// {"socket", EC_NET, EF_CREATES_FD | EF_MODIFIES_STATE, 2, {{"domain", PT_FLAGS32, PF_DEC, socket_families}, {"type", PT_UINT32, PF_DEC} } },
+	//{"socket", EC_NET, EF_CREATES_FD | EF_MODIFIES_STATE, 1, {{"fd", PT_FD, PF_DEC} } },
 	{"bind", EC_NET, EF_USES_FD | EF_MODIFIES_STATE, 1, {{"fd", PT_FD, PF_DEC} } },
 	{"bind", EC_NET, EF_USES_FD | EF_MODIFIES_STATE, 2, {{"res", PT_ERRNO, PF_DEC}, {"addr", PT_SOCKADDR, PF_NA} } },
 	{"connect", EC_NET, EF_USES_FD | EF_MODIFIES_STATE, 1, {{"fd", PT_FD, PF_DEC} } },

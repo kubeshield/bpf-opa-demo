@@ -364,7 +364,52 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
 				}
 			}
-			oneliners.PrettyJson(evt)
+		case 19: //socket exit
+			// oneliners.PrettyJson(paramLens)
+			sock := socket{}
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					sock.fd = int(binary.LittleEndian.Uint32(rawParams))
+				case 1:
+					// evt.Params["domain"] = binary.LittleEndian.Uint32(rawParams)
+					domain := binary.LittleEndian.Uint32(rawParams)
+					var socketDomain string
+					switch domain {
+					case 1:
+						socketDomain = "AF_UNIX"
+					case 2:
+						socketDomain = "AF_INET"
+					case 10:
+						socketDomain = "AF_INET6"
+					}
+					sock.domain = socketDomain
+
+				case 2:
+					packetType := binary.LittleEndian.Uint32(rawParams)
+					var socketType string
+					switch packetType {
+					case 1:
+						socketType = "SOCK_STREAM"
+					case 2:
+						socketType = "SOCK_DGRAM"
+					}
+					sock.socktype = socketType
+				case 3:
+					sock.proto = int(binary.LittleEndian.Uint16(rawParams))
+				}
+
+				add_socket(sock)
+
+				continue
+			}
 		}
 
 		opaQueryCh <- evt
@@ -404,4 +449,20 @@ func convertToStringSlice(rawParams []byte) []string {
 		}
 	}
 	return res
+}
+
+type socket struct {
+	fd       int
+	domain   string
+	socktype string
+	proto    int
+}
+
+var sockMap = make(map[int]socket)
+var mu sync.Mutex
+
+func add_socket(s socket) {
+	mu.Lock()
+	sockMap[s.fd] = s
+	mu.Unlock()
 }
