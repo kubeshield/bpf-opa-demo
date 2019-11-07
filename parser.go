@@ -410,6 +410,31 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 
 				continue
 			}
+		case 247: //accept
+			spew.Dump(data)
+			spew.Dump(paramLens)
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+				//
+				switch i {
+				case 0:
+					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+				case 1:
+					// evt.Params["size"] = string(rawParams)
+					socketDomain := binary.LittleEndian.Uint16(rawParams)
+					if socketDomain == 1 {
+						(binary.LittleEndian.Uint16(rawParams[8:]))
+						dest := rawParams[17:]
+						spew.Dump(dest)
+					}
+				}
+			}
+			oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
