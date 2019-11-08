@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"net"
 	"os"
 	"path/filepath"
 	"strings"
@@ -425,12 +426,30 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				case 0:
 					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
 				case 1:
-					// evt.Params["size"] = string(rawParams)
-					socketDomain := binary.LittleEndian.Uint16(rawParams)
+					socketDomain := uint8(rawParams[0])
+					rawParams = rawParams[1:]
 					if socketDomain == 1 {
-						(binary.LittleEndian.Uint16(rawParams[8:]))
-						dest := rawParams[17:]
-						spew.Dump(dest)
+						destination := string(rawParams[16:])
+						evt.Params["destination"] = destination
+						evt.Params["type"] = "AF_UNIX"
+					} else if socketDomain == 2 {
+						source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+						rawParams = rawParams[4:]
+
+						source_port := binary.LittleEndian.Uint16(rawParams)
+						rawParams = rawParams[2:]
+
+						destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+						rawParams = rawParams[4:]
+
+						destination_port := binary.LittleEndian.Uint16(rawParams)
+						rawParams = rawParams[2:]
+
+						evt.Params["type"] = "AF_INET"
+						evt.Params["source_ip"] = source_ip
+						evt.Params["source_port"] = source_port
+						evt.Params["destination_ip"] = destination_ip
+						evt.Params["destination_port"] = destination_port
 					}
 				}
 			}
