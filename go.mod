@@ -1,4 +1,4 @@
-module github.com/appscode-cloud/bpf-opa-demo
+module go.kubeshield.dev/bpf-opa-demo
 
 go 1.12
 
@@ -15,4 +15,4 @@ require (
 	k8s.io/klog v0.4.0
 )
 
-replace github.com/iovisor/gobpf => github.com/tahsinrahman/gobpf v0.0.0-20190828103435-4226291af08b
+replace github.com/iovisor/gobpf => github.com/kubeshield/gobpf v0.0.0-20191114073710-937a59685245
