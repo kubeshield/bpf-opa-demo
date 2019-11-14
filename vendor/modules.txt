@@ -1,0 +1,30 @@
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
+# github.com/fatih/color v1.7.0
+github.com/fatih/color
+# github.com/go-logr/logr v0.1.0
+github.com/go-logr/logr
+# github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
+github.com/hokaccha/go-prettyjson
+# github.com/iovisor/gobpf v0.0.0-20190717135640-14e20c7d794b => github.com/kubeshield/gobpf v0.0.0-20191114073710-937a59685245
+github.com/iovisor/gobpf/elf
+github.com/iovisor/gobpf/pkg/cpuonline
+github.com/iovisor/gobpf/elf/include
+github.com/iovisor/gobpf/pkg/bpffs
+# github.com/mattn/go-colorable v0.1.4
+github.com/mattn/go-colorable
+# github.com/mattn/go-isatty v0.0.10
+github.com/mattn/go-isatty
+# github.com/pkg/errors v0.8.1
+github.com/pkg/errors
+# github.com/prometheus/procfs v0.0.5
+github.com/prometheus/procfs
+github.com/prometheus/procfs/internal/fs
+github.com/prometheus/procfs/internal/util
+# github.com/the-redback/go-oneliners v0.0.0-20190417084731-74f7694e6dae
+github.com/the-redback/go-oneliners
+# golang.org/x/sys v0.0.0-20191008105621-543471e840be
+golang.org/x/sys/unix
+# k8s.io/klog v0.4.0
+k8s.io/klog
+k8s.io/klog/klogr
