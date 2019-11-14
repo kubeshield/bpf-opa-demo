@@ -15,4 +15,4 @@ require (
 	k8s.io/klog v0.4.0
 )
 
-replace github.com/iovisor/gobpf => github.com/kubeshield/gobpf v0.0.0-20191114073710-937a59685245
+replace github.com/iovisor/gobpf => github.com/kubeshield/gobpf v0.0.0-20191114074412-9015aeb8b430
