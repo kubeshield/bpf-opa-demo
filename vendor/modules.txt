@@ -6,7 +6,7 @@ github.com/fatih/color
 github.com/go-logr/logr
 # github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e
 github.com/hokaccha/go-prettyjson
-# github.com/iovisor/gobpf v0.0.0-20190717135640-14e20c7d794b => github.com/kubeshield/gobpf v0.0.0-20191114073710-937a59685245
+# github.com/iovisor/gobpf v0.0.0-20190717135640-14e20c7d794b => github.com/kubeshield/gobpf v0.0.0-20191114074412-9015aeb8b430
 github.com/iovisor/gobpf/elf
 github.com/iovisor/gobpf/pkg/cpuonline
 github.com/iovisor/gobpf/elf/include

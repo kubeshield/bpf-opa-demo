@@ -32,6 +32,12 @@ import (
 	"github.com/the-redback/go-oneliners"
 )
 
+const (
+	UNIX_SOCKET = "AF_UNIX"
+	IPv4_SOCKET = "AF_INET"
+	IPv6_SOCKET = "AF_INET6"
+)
+
 var (
 	processMapLock sync.RWMutex
 	processMap     = map[uint64]Process{}
@@ -65,8 +71,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 
 				switch i {
 				case 0:
@@ -92,8 +97,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 
 				switch i {
 				case 0:
@@ -152,8 +156,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -170,8 +173,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -192,8 +194,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -209,8 +210,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -230,8 +230,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -247,8 +246,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -264,8 +262,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -285,8 +282,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -304,8 +300,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -326,8 +321,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -346,8 +340,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -366,8 +359,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -388,8 +380,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -401,11 +392,11 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					var socketDomain string
 					switch domain {
 					case 1:
-						socketDomain = "AF_UNIX"
+						socketDomain = UNIX_SOCKET
 					case 2:
-						socketDomain = "AF_INET"
+						socketDomain = IPv4_SOCKET
 					case 10:
-						socketDomain = "AF_INET6"
+						socketDomain = IPv6_SOCKET
 					}
 					sock.domain = socketDomain
 
@@ -434,8 +425,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 				//
 				switch i {
@@ -459,7 +449,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 						rawParams = rawParams[4:]
 
 						destination_port := binary.LittleEndian.Uint16(rawParams)
-						rawParams = rawParams[2:]
 
 						evt.Params["type"] = "AF_INET"
 						evt.Params["source_ip"] = source_ip
