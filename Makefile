@@ -47,7 +47,7 @@ endif
 SRC_PKGS := *.go bpf rules sample
 SRC_DIRS := $(SRC_PKGS) # directories which hold app source (not vendored)
 
-DOCKER_PLATFORMS := linux/amd64 linux/arm64
+DOCKER_PLATFORMS := linux/amd64
 BIN_PLATFORMS    := $(DOCKER_PLATFORMS)
 
 # Used internally.  Users should pass GOOS and/or GOARCH.
