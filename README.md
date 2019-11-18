@@ -204,7 +204,7 @@ is_open_read {
 
 ## Acknowledgements
 
-- We're using eBPF codes from the [sysdig project](https://github.com/draios/sysdig/tree/master/driver/bpf).
+- We're using eBPF code from the [sysdig project](https://github.com/draios/sysdig/tree/master/driver/bpf).
 Follow [this guide](https://falco.org/docs/source/) from the falco project for building the eBPF codes.
 Then copy the compiled elf file to `bpf/probe.o`
 
