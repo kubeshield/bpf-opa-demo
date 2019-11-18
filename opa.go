@@ -25,6 +25,8 @@ import (
 	"io/ioutil"
 	"net/http"
 
+	"go.kubeshield.dev/bpf-opa-demo/rules"
+
 	"github.com/the-redback/go-oneliners"
 )
 
@@ -127,11 +129,11 @@ func loadRules() error {
 }
 
 func loadFile(name string) error {
-	filename := fmt.Sprintf("./rules/%s.rego", name)
+	filename := fmt.Sprintf("%s.rego", name)
 
 	log := logger.WithValues("filename", filename)
 
-	b, err := ioutil.ReadFile(filename)
+	b, err := rules.Asset(filename)
 	if err != nil {
 		log.Error(err, "failed to read file")
 		return err

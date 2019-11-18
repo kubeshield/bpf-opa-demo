@@ -199,9 +199,9 @@ static int bpf_prog_load(enum bpf_prog_type prog_type,
 	attr.insn_cnt = prog_len / sizeof(struct bpf_insn);
 	attr.insns = ptr_to_u64((void *) insns);
 	attr.license = ptr_to_u64((void *) license);
-	attr.log_buf = ptr_to_u64(log_buf);
-	attr.log_size = log_size;
-	attr.log_level = 1;
+	// attr.log_buf = ptr_to_u64(log_buf);
+	// attr.log_size = log_size;
+	// attr.log_level = 1;
 	attr.kern_version = kern_version;
 
 	ret = syscall(__NR_bpf, BPF_PROG_LOAD, &attr, sizeof(attr));
