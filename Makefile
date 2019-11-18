@@ -97,7 +97,21 @@ version:
 	@echo ::set-output name=commit_hash::$(commit_hash)
 	@echo ::set-output name=commit_timestamp::$(commit_timestamp)
 
-gen:
+.PHONY: gen-bindata
+gen-bindata:
+	@docker run                                                 \
+	    -i                                                      \
+	    --rm                                                    \
+	    -u $$(id -u):$$(id -g)                                  \
+	    -v $$(pwd):/src                                         \
+	    -w /src/bpf                                             \
+		-v /tmp:/.cache                                         \
+	    --env HTTP_PROXY=$(HTTP_PROXY)                          \
+	    --env HTTPS_PROXY=$(HTTPS_PROXY)                        \
+	    $(BUILD_IMAGE)                                          \
+	    go-bindata -ignore=\\.go -ignore=\\.DS_Store -mode=0644 -modtime=1573722179 -o bindata.go -pkg bpf ./...
+
+gen: gen-bindata
 	@true
 
 fmt: $(BUILD_DIRS)

@@ -21,9 +21,12 @@ import (
 	"bytes"
 	"encoding/binary"
 	"flag"
+	"io"
 	"os"
 	"strings"
 	"unsafe"
+
+	"go.kubeshield.dev/bpf-opa-demo/bpf"
 
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
@@ -73,7 +76,11 @@ func main() {
 	// 0 indexed, so adding 1
 	noCPU := int(cpuRange[len(cpuRange)-1]) + 1
 
-	module, err := load_bpf_file(noCPU, "bpf/probe.o")
+	bpfProgram, err := bpf.Asset("probe.o")
+	if err != nil {
+		panic(err)
+	}
+	module, err := load_bpf_file(noCPU, bytes.NewReader(bpfProgram))
 	if err != nil {
 		panic(err)
 	}
@@ -103,8 +110,8 @@ func main() {
 	<-sig
 }
 
-func load_bpf_file(noCPU int, filepath string) (*elf.Module, error) {
-	m := elf.NewModule(filepath)
+func load_bpf_file(noCPU int, reader io.ReaderAt) (*elf.Module, error) {
+	m := elf.NewModuleFromReader(reader)
 	err := m.Load(map[string]elf.SectionParams{
 		"maps/perf_map": {
 			MapMaxEntries: noCPU,
