@@ -32,6 +32,8 @@ Fig: Diagram showing the major components of bpf-opa-demo
 
 ## Usage
 
+> Make sure that you're running a linux machine with kernel version `4.17` or higher. We're attaching eBPF programs to `raw_tracepoints`, and this feature is available from linux kernel `4.17`. For more information, you can see [here](https://github.com/iovisor/bcc/blob/master/docs/kernel-versions.md).
+
 Download `Open Policy Agent` from [github release page](https://github.com/open-policy-agent/opa/releases). Start the OPA server
 
 ```bash
@@ -198,3 +200,12 @@ is_open_read {
 ```
 
 - Rego doesn't support any kind of loops, if else blocks etc. We can write more complex rules if it has support for these.
+
+
+## Acknowledgements
+
+- We're using eBPF code from the [sysdig project](https://github.com/draios/sysdig/tree/master/driver/bpf).
+Follow [this guide](https://falco.org/docs/source/) from the falco project for building the eBPF codes.
+Then copy the compiled elf file to `bpf/probe.o`
+
+- We're using default rules from the [falco project](https://github.com/falcosecurity/falco/blob/master/rules/falco_rules.yaml) and rewriting them in rego, the policy language from Open Policy Agent(OPA).
