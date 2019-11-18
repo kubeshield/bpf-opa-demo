@@ -40,7 +40,7 @@ Download `Open Policy Agent` from [github release page](https://github.com/open-
 opa run -s
 ```
 
-Run the binary with root permissions.
+Download `bpf-opa-demo` binary from [github release page](https://github.com/kubeshield/bpf-opa-demo/releases). Run the binary with root permissions.
 
 ```bash
 sudo ./bpf-opa-demo
