@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"strings"
+	"sync"
 	"unsafe"
 
 	"go.kubeshield.dev/bpf-opa-demo/bpf"
@@ -50,23 +51,15 @@ type rawSyscallData struct {
 }
 
 var (
-	logger   = klogr.New()
-	selfName string
-	selfPid  = make(map[int]bool)
+	logger       = klogr.New()
+	selfName     = "bpf-opa-demo"
+	selfPidMutex sync.RWMutex
+	selfPid      = make(map[int]bool)
 )
 
 func main() {
 	klog.InitFlags(nil)
 	flag.Parse()
-
-	proc, err := procfs.Self()
-	if err != nil {
-		panic(err)
-	}
-	selfName, err = proc.Comm()
-	if err != nil {
-		panic(err)
-	}
 
 	cpuRange, err := cpuonline.Get()
 	if err != nil {
@@ -222,6 +215,14 @@ func processPerfEventData(evtDataCh chan []byte) {
 			data = append(data, <-evtDataCh...)
 		}
 
+		// ignore this syscall if it is from this program
+		selfPidMutex.RLock()
+		if selfPid[int(out.Tid)] {
+			selfPidMutex.RUnlock()
+			continue
+		}
+		selfPidMutex.RUnlock()
+
 		data = data[binary.Size(out):]
 
 		parseCh <- &rawSyscallData{
@@ -238,44 +239,50 @@ func loadAllProcess() {
 	}
 
 	for _, p := range procs {
-		name, err := p.Comm()
-		if err != nil {
-			logger.Error(err, "error reading command name, skipping")
-		}
-		if name == selfName {
-			selfPid[p.PID] = true
-		}
-		executable, err := p.Executable()
-		if err != nil {
-			logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
-		}
-		cmdline, err := p.CmdLine()
-		if err != nil {
-			logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
-		}
-		containerID, err := getContainerIDfromPID(p.PID)
-		if err != nil {
-			logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
-		}
-
-		var command string
-		var args []string
-		if len(cmdline) > 0 {
-			command = cmdline[0]
-			args = cmdline[1:]
-		}
-
-		process := Process{
-			Name:       name,
-			Executable: executable,
-			Args:       args,
-			Command:    command,
-			Cgroup:     []string{containerID},
-			Pid:        uint64(p.PID),
-		}
+		process := getProcessInfo(p)
 
 		processMapLock.Lock()
 		processMap[uint64(p.PID)] = process
 		processMapLock.Unlock()
+	}
+}
+
+func getProcessInfo(p procfs.Proc) Process {
+	name, err := p.Comm()
+	if err != nil {
+		logger.V(6).Info("error reading command name, skipping: ", err.Error())
+	}
+	if name == selfName {
+		selfPidMutex.Lock()
+		selfPid[p.PID] = true
+		selfPidMutex.Unlock()
+	}
+	executable, err := p.Executable()
+	if err != nil {
+		logger.V(6).Info(errors.Wrap(err, "failed to get Process executable").Error())
+	}
+	cmdline, err := p.CmdLine()
+	if err != nil {
+		logger.V(6).Info(errors.Wrap(err, "failed to get Process cmdline").Error())
+	}
+	containerID, err := getContainerIDfromPID(p.PID)
+	if err != nil {
+		logger.V(6).Info(errors.Wrap(err, "failed to get Process containerid").Error())
+	}
+
+	var command string
+	var args []string
+	if len(cmdline) > 0 {
+		command = cmdline[0]
+		args = cmdline[1:]
+	}
+
+	return Process{
+		Name:       name,
+		Executable: executable,
+		Args:       args,
+		Command:    command,
+		Cgroup:     []string{containerID},
+		Pid:        uint64(p.PID),
 	}
 }

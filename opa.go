@@ -27,6 +27,7 @@ import (
 
 	"go.kubeshield.dev/bpf-opa-demo/rules"
 
+	"github.com/prometheus/procfs"
 	"github.com/the-redback/go-oneliners"
 )
 
@@ -61,14 +62,19 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 	for {
 		evt := <-opaQueryCh
 
-		if selfPid[int(evt.Tid)] {
-			continue
-		}
-
 		processMapLock.RLock()
 		proc := processMap[evt.Tid]
 		parent := processMap[proc.Ppid]
 		processMapLock.RUnlock()
+
+		if proc.Pid == 0 {
+			p, _ := procfs.NewProc(int(evt.Tid))
+			proc = getProcessInfo(p)
+		}
+		if parent.Pid == 0 {
+			p, _ := procfs.NewProc(int(proc.Ppid))
+			parent = getProcessInfo(p)
+		}
 
 		proc.Parent = &parent
 
