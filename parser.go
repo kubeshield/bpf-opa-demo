@@ -333,7 +333,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
 				}
 			}
-			oneliners.PrettyJson(evt)
+			// oneliners.PrettyJson(evt)
 		case 317: //fchmod
 			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
@@ -352,7 +352,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
 				}
 			}
-			oneliners.PrettyJson(evt)
+			// oneliners.PrettyJson(evt)
 		case 313: //fchmodat
 			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
@@ -419,8 +419,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				continue
 			}
 		case 247: //accept
-			spew.Dump(data)
-			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
 					continue
@@ -458,7 +456,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					}
 				}
 			}
-			oneliners.PrettyJson(evt)
+			// oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
