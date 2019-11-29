@@ -34,6 +34,9 @@ import data.macros.open_create
 import data.macros.dev_creation_process
 import data.macros.open_allowed_dev_files
 import data.macros.file
+import data.macros.inbound_network_connection
+import data.macros.ssh_process
+import data.macros.open_ssh_directory
 
 open_sensitive_files = input {
 	open_read
@@ -148,3 +151,15 @@ Create_files_below_dev = input {
 	not startswith(file, "/dev/tty")
 	not open_allowed_dev_files
 }
+
+disallowed_ssh_connection = input {
+	inbound_network_connection
+	input.event.params.source_port = 22
+}
+
+read_ssh_information = input {
+	open_read
+	not ssh_process
+	open_ssh_directory
+}
+
