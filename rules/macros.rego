@@ -165,6 +165,16 @@ modify {
 	remove
 }
 
+modify_file(filename) {
+	contains(input.event.params.name, filename)
+}
+modify_file(filename) {
+	contains(input.event.params.oldpath, filename)
+}
+modify_file(filename) {
+	contains(input.event.params.pathname, filename)
+}
+
 #
 # package management binaries
 #
@@ -339,14 +349,9 @@ rename_shell_history {
 }
 
 modify_shell_history {
-	contains(input.event.params.name, shell_history_files[_])
+	modify_file(shell_history_files[_])
 }
-modify_shell_history {
-	contains(input.event.params.oldpath, shell_history_files[_])
-}
-modify_shell_history {
-	contains(input.event.params.pathname, shell_history_files[_])
-}
+
 
 data_remove_process := [ "shred", "mkfs", "mke2fs" ]
 
