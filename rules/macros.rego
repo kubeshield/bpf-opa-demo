@@ -529,3 +529,8 @@ is_ip_allowed(ip) {
 	startswith(ip, allowed_ips[_])
 }
 
+http_proxy_binaries := ["curl", "wget" ]
+
+http_proxy_procs {
+	input.process.name = http_proxy_binaries[_]
+}
