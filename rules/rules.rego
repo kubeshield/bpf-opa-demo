@@ -44,6 +44,7 @@ import data.macros.modify_file
 import data.macros.inbound_network_connection
 import data.macros.outbound_network_connection
 import data.macros.interpreted_procs
+import data.macros.http_proxy_procs
 
 open_sensitive_files = input {
 	open_read
@@ -196,3 +197,10 @@ interpreted_procs_outbound_network_activity = input {
 	outbound_network_connection
 	interpreted_procs
 }
+
+program_run_with_disallowed_http_proxy_env = input {
+	spawned_process
+	http_proxy_procs
+	contains("HTTP_PROXY", input.process.args[_])
+}
+
