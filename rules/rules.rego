@@ -37,6 +37,10 @@ import data.macros.file
 import data.macros.inbound_network_connection
 import data.macros.ssh_process
 import data.macros.open_ssh_directory
+import data.macros.modify
+import data.macros.mkdir
+import data.macros.bin_dirs
+import data.macros.modify_file
 
 open_sensitive_files = input {
 	open_read
@@ -163,3 +167,14 @@ read_ssh_information = input {
 	open_ssh_directory
 }
 
+modify_binary_dirs = input {
+	modify
+	modify_file(bin_dirs[_])
+	not package_management_process
+}
+
+mkdir_binary_dirs = input {
+	mkdir
+	contains(input.event.params.pathname, bin_dirs[_])
+	not package_management_process
+}
