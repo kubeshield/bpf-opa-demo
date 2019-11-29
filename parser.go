@@ -457,6 +457,62 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				}
 			}
 			// oneliners.PrettyJson(evt)
+		case 22: //connect enter
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["socket_fd"] = binary.LittleEndian.Uint32(rawParams)
+				}
+			}
+		case 23: //connect exit
+			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+				if paramLens[i] == 0 {
+					continue
+				}
+				rawParams := make([]byte, paramLens[i])
+				rawParams = data[:paramLens[i]]
+				data = data[paramLens[i]:]
+
+				switch i {
+				case 0:
+					evt.Params["ret"] = binary.LittleEndian.Uint32(rawParams)
+				case 1:
+					socketDomain := uint8(rawParams[0])
+					rawParams = rawParams[1:]
+					if socketDomain == 1 {
+						destination := string(rawParams[16:])
+						evt.Params["destination"] = destination
+						evt.Params["type"] = "AF_UNIX"
+					} else if socketDomain == 2 {
+						source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+						rawParams = rawParams[4:]
+
+						source_port := binary.LittleEndian.Uint16(rawParams)
+						rawParams = rawParams[2:]
+
+						destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+						rawParams = rawParams[4:]
+
+						// net.ParseIP()
+						destination_port := binary.LittleEndian.Uint16(rawParams)
+						rawParams = rawParams[2:]
+
+						evt.Params["type"] = "AF_INET"
+						evt.Params["source_ip"] = source_ip
+						evt.Params["source_port"] = source_port
+						evt.Params["destination_ip"] = destination_ip
+						evt.Params["destination_port"] = destination_port
+					}
+				}
+			}
+			// oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
