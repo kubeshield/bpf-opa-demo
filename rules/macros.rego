@@ -477,3 +477,25 @@ User_mgmt_binaries {
     #not run_by_ms_oms
     #not run_by_google_accounts_daemon
 }
+
+ssh_binaries := [
+    "sshd", "sftp-server", "ssh-agent",
+    "ssh", "scp", "sftp",
+    "ssh-keygen", "ssh-keysign", "ssh-keyscan", "ssh-add"
+]
+ssh_process {
+	input.process.name = shell_binaries[_]
+}
+
+user_ssh_directory {
+	startswith(file, "/home")
+    contains(file, ".ssh")
+}
+
+open_ssh_directory {
+	user_ssh_directory
+}
+open_ssh_directory {
+	file_inside_directory("/root/.ssh")
+}
+
