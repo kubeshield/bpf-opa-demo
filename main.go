@@ -224,10 +224,12 @@ func processPerfEventData(evtDataCh chan []byte) {
 		selfPidMutex.RUnlock()
 
 		data = data[binary.Size(out):]
+		newdata := make([]byte, len(data))
+		copy(newdata, data)
 
 		parseCh <- &rawSyscallData{
 			perfEventHeader: out,
-			data:            data,
+			data:            newdata,
 		}
 	}
 }
