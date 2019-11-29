@@ -178,3 +178,8 @@ mkdir_binary_dirs = input {
 	contains(input.event.params.pathname, bin_dirs[_])
 	not package_management_process
 }
+
+launch_suspicious_network_tool_on_host = input {
+	spawned_process
+	network_tool_procs
+}
