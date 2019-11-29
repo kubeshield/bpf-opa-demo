@@ -17,6 +17,7 @@ limitations under the License.
 package main
 
 import (
+	"net"
 	"syscall"
 
 	"github.com/davecgh/go-spew/spew"
@@ -28,10 +29,12 @@ func main() {
 		panic(err)
 	}
 
-	if err := syscall.Bind(sfd, &syscall.SockaddrInet4{
-		Port: 8080,
-		Addr: [4]byte{},
-	}); err != nil {
+	serverAddress := &syscall.SockaddrInet4{
+		Port: 5555,
+	}
+	copy(serverAddress.Addr[:], net.ParseIP("127.0.0.1"))
+
+	if err := syscall.Bind(sfd, serverAddress); err != nil {
 		panic(err)
 	}
 
