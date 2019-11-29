@@ -504,3 +504,28 @@ open_ssh_directory {
 	file_inside_directory("/root/.ssh")
 }
 
+
+inbound_outbound_syscalls := [ "accept", "listen", "connect" ]
+
+inbound_network_connection {
+	input.event.name = inbound_outbound_syscalls[_]
+	input.event.params.type = "AF_INET"
+	not is_ip_allowed(input.event.params.destination_ip)
+}
+
+outbound_network_connection {
+	input.event.name = inbound_outbound_syscalls[_]
+	input.event.params.type = "AF_INET"
+	not is_ip_allowed(input.event.params.destination_ip)
+}
+
+interpreted_binaries = [ "lua", "node", "perl", "perl5", "perl6", "php", "python", "python2", "python3", "ruby", "tcl" ]
+interpreted_procs {
+    input.process.name = interpreted_binaries[_]
+}
+
+allowed_ips := [ "0.0.0.0", "127.0.0" ]
+is_ip_allowed(ip) {
+	startswith(ip, allowed_ips[_])
+}
+

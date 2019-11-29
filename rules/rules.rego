@@ -41,6 +41,9 @@ import data.macros.modify
 import data.macros.mkdir
 import data.macros.bin_dirs
 import data.macros.modify_file
+import data.macros.inbound_network_connection
+import data.macros.outbound_network_connection
+import data.macros.interpreted_procs
 
 open_sensitive_files = input {
 	open_read
@@ -182,4 +185,14 @@ mkdir_binary_dirs = input {
 launch_suspicious_network_tool_on_host = input {
 	spawned_process
 	network_tool_procs
+}
+
+interpreted_procs_inbound_network_activity = input {
+	inbound_network_connection
+	interpreted_procs
+}
+
+interpreted_procs_outbound_network_activity = input {
+	outbound_network_connection
+	interpreted_procs
 }
