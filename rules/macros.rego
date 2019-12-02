@@ -534,3 +534,6 @@ http_proxy_binaries := ["curl", "wget" ]
 http_proxy_procs {
 	input.process.name = http_proxy_binaries[_]
 }
+
+allowed_outbound_destination_domains := [ "google.com", "www.yahoo.com" ]
+allowed_inbound_source_domains := [ "google.com" ]
