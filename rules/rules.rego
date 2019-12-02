@@ -54,6 +54,7 @@ import data.macros.ansible_running_python
 import data.macros.python_running_chef
 import data.macros.exe_running_docker_save
 import data.macros.amazon_linux_running_python_yum
+import data.macros.net_miner_pool
 
 open_sensitive_files = input {
 	open_read
@@ -231,4 +232,13 @@ write_below_rpm_database = input {
 	not python_running_chef
 	not exe_running_docker_save
 	not amazon_linux_running_python_yum
+}
+
+Detect_outbound_connections_to_common_miner_pool_ports = input {
+	net_miner_pool
+}
+
+Detect_crypto_miners_using_the_Stratum_protocol = input {
+	spawned_process
+	input.process.args[_] = "stratum+tcp"
 }
