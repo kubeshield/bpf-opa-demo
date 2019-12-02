@@ -269,12 +269,12 @@ python_running_ms_oms {
 #
 # docker
 #
-#docker_process := [ "docker", "dockerd" ]
-#exe_running_docker_save {
-	#startswith(input.process.cmdline, "exe /var/lib/docker")
-	# TODO
-	#input.process.pname is (dockerd, docker))
-#}
+docker_process := [ "docker", "dockerd" ]
+exe_running_docker_save {
+	cmdline := concat(" ", input.process.args)
+	startswith(cmdline, "exe /var/lib/docker")
+	input.process.parent.name =  docker_process[_]
+}
 
 symlink_syscalls := [ "symlink", "symlinkat" ]
 
@@ -537,3 +537,25 @@ http_proxy_procs {
 
 allowed_outbound_destination_domains := [ "google.com", "www.yahoo.com" ]
 allowed_inbound_source_domains := [ "google.com" ]
+
+amazon_linux_running_python_yum {
+	input.process.name = "python"
+	parent_args := concat(" ", input.process.parent.args)
+	parent_args = "python -m amazon_linux_extras system_motd"
+	process_args := concat(" ", input.process.args)
+	startswith(process_args, "python -c import yum")
+}
+
+python_running_chef {
+	input.process.name = "python"
+	input.process.args[_] = "yum-dump.py"
+	args := concat(" ", input.process.args)
+	args = "python /usr/bin/chef-monitor.py"
+}
+
+python_procs := [ "python", "pypy", "python3" ]
+ansible_running_python {
+	input.process.name = python_procs[_]
+	contains(input.process.args, "ansible")
+}
+
