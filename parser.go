@@ -453,6 +453,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 						evt.Params["source_port"] = source_port
 						evt.Params["destination_ip"] = destination_ip
 						evt.Params["destination_port"] = destination_port
+						evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
 					}
 				}
 			}
@@ -509,6 +510,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 						evt.Params["source_port"] = source_port
 						evt.Params["destination_ip"] = destination_ip
 						evt.Params["destination_port"] = destination_port
+						evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
 					}
 				}
 			}

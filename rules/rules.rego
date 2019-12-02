@@ -45,6 +45,10 @@ import data.macros.inbound_network_connection
 import data.macros.outbound_network_connection
 import data.macros.interpreted_procs
 import data.macros.http_proxy_procs
+import data.macros.outbound_network_connection
+import data.macros.inbound_network_connection
+import data.macros.allowed_outbound_destination_domains
+import data.macros.allowed_inbound_destination_domains
 
 open_sensitive_files = input {
 	open_read
@@ -204,3 +208,12 @@ program_run_with_disallowed_http_proxy_env = input {
 	contains("HTTP_PROXY", input.process.args[_])
 }
 
+unexpected_outbound_connection_destination = input {
+	outbound_network_connection
+	contains(input.event.params.DNS[_],  allowed_outbound_destination_domains[_])
+}
+
+unexpected_inbound_connection_source = input {
+	inbound_network_connection
+	contains(input.event.params.DNS[_],  allowed_inbound_destination_domains[_])
+}
