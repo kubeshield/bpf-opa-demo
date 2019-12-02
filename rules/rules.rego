@@ -49,6 +49,11 @@ import data.macros.outbound_network_connection
 import data.macros.inbound_network_connection
 import data.macros.allowed_outbound_destination_domains
 import data.macros.allowed_inbound_destination_domains
+import data.macros.rpm_procs
+import data.macros.ansible_running_python
+import data.macros.python_running_chef
+import data.macros.exe_running_docker_save
+import data.macros.amazon_linux_running_python_yum
 
 open_sensitive_files = input {
 	open_read
@@ -216,4 +221,14 @@ unexpected_outbound_connection_destination = input {
 unexpected_inbound_connection_source = input {
 	inbound_network_connection
 	contains(input.event.params.DNS[_],  allowed_inbound_destination_domains[_])
+}
+
+write_below_rpm_database = input {
+	open_write
+	startswith(file, "/var/lib/rpm")
+	not rpm_procs
+	not ansible_running_python
+	not python_running_chef
+	not exe_running_docker_save
+	not amazon_linux_running_python_yum
 }
