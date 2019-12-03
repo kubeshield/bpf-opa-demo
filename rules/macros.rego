@@ -217,6 +217,9 @@ package_management_process {
 	# TODO: is it correct?
 	input.process.executable = package_mgmt_binaries[_]
 }
+package_management_ancestor_process {
+	input.process.parent.executable = package_mgmt_binaries[_]
+}
 
 #
 # update repository
@@ -653,3 +656,12 @@ mines_crypto {
 mines_crypto {
 	minerpool_other
 }
+
+
+inside_container {
+	contains(input.process.cgroup[_], "docker")
+}
+not_inside_container {
+	not inside_container
+}
+
