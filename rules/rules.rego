@@ -55,6 +55,8 @@ import data.macros.python_running_chef
 import data.macros.exe_running_docker_save
 import data.macros.amazon_linux_running_python_yum
 import data.macros.net_miner_pool
+import data.macros.package_management_ancestor_process
+import data.macros.inside_container
 
 open_sensitive_files = input {
 	open_read
@@ -241,4 +243,11 @@ Detect_outbound_connections_to_common_miner_pool_ports = input {
 Detect_crypto_miners_using_the_Stratum_protocol = input {
 	spawned_process
 	input.process.args[_] = "stratum+tcp"
+}
+
+Launch_Package_Management_Process_in_Container = input {
+	spawned_process
+	inside_container
+	package_management_process
+	not package_management_ancestor_process
 }
