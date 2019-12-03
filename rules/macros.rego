@@ -665,3 +665,12 @@ not_inside_container {
 	not inside_container
 }
 
+
+# In a local/user rules file, you should override this macro with the
+# IP address of your k8s api server. The IP 1.2.3.4 is a placeholder
+# IP that is not likely to be seen in practice.
+k8s_api_server {
+	input.event.params.destination_ip = "1.2.3.4"
+	input.event.params.destination_port = "6443"
+}
+
