@@ -57,6 +57,7 @@ import data.macros.amazon_linux_running_python_yum
 import data.macros.net_miner_pool
 import data.macros.package_management_ancestor_process
 import data.macros.inside_container
+import data.macros.k8s_api_server
 
 open_sensitive_files = input {
 	open_read
@@ -250,4 +251,17 @@ Launch_Package_Management_Process_in_Container = input {
 	inside_container
 	package_management_process
 	not package_management_ancestor_process
+}
+
+Contact_K8S_API_Server_From_Container = input {
+	outbound_network_connection
+	k8s_api_server
+	inside_container
+}
+
+Unexpected_K8s_NodePort_Connection = input {
+	outbound_network_connection
+	inside_container
+	input.event.params.destination_port >= 30000
+	input.event.params.destination_port <= 32767
 }
