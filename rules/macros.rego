@@ -674,3 +674,19 @@ k8s_api_server {
 	input.event.params.destination_port = "6443"
 }
 
+db_server_binaries := ["mysqld", "postgres", "sqlplus" ]
+db_server_process {
+	input.process.name = db_server_binaries[_]
+}
+postgres_running_wal_e {
+	input.process.parent.name = "postgres"
+	cmdline := concat(" ", input.process.args)
+	startswith(cmdline, "sh -c envdir /etc/wal-e.d/env /usr/local/bin/wal-e")
+}
+
+DB_program_spawned_process {
+	spawned_process
+	input.process.parent.name = db_server_binaries[_]
+	not db_server_process
+    not postgres_running_wal_e
+}
