@@ -458,34 +458,6 @@ open_allowed_dev_files {
 	file = allowed_dev_files[_]
 }
 
-user_mgmt_binaries := ["login_binaries", "passwd_binaries", "shadowutils_binaries" ]
-allowed_user_mgmt_binaries := [ "su", "sudo", "lastlog", "nologin", "unix_chkpwd" ]
-run_allowed_user_mgmt_binaries {
-	input.process.command = allowed_user_mgmt_binaries[_]
-}
-
-allowed_parents := [ "systemd", "systemd.postins", "udev.postinst", "run-parts", "cron", "crontab" ]
-run_parent_allowed_user_mgmt_binaries {
-	input.process.parent.command = allowed_user_mgmt_binaries[_]
-}
-
-User_mgmt_binaries {
-    spawned_process
-    input.process.command = user_mgmt_binaries[_]
-    not run_allowed_user_mgmt_binaries
-    not run_parent_allowed_user_mgmt_binaries
-    #TODO
-    #not container
-    #not startswith(input.process.cmdline, "passwd -S")
-    #not startswith(input.process.cmdline,"useradd -D")
-    #not startswith(input.process.cmdline, "systemd --version")
-    #not run_by_qualys
-    #not run_by_sumologic_securefiles
-    #not run_by_yum
-    #not run_by_ms_oms
-    #not run_by_google_accounts_daemon
-}
-
 ssh_binaries := [
     "sshd", "sftp-server", "ssh-agent",
     "ssh", "scp", "sftp",
@@ -703,5 +675,33 @@ change_thread_ns_binaries[name] { name := thread_ns_binaries[_] }
 
 proc_in_change_thread_ns_binaries {
 	input.process.name = change_thread_ns_binaries[_]
+}
+
+login_binaries :=  [ "login", "systemd", "systemd-logind", "su", "nologin", "faillog", "lastlog", "newgrp", "sg" ]
+
+passwd_binaries := [
+    "shadowconfig", "grpck", "pwunconv", "grpconv", "pwck",
+    "groupmod", "vipw", "pwconv", "useradd", "newusers", "cppw", "chpasswd", "usermod",
+    "groupadd", "groupdel", "grpunconv", "chgpasswd", "userdel", "chage", "chsh",
+    "gpasswd", "chfn", "expiry", "passwd", "vigr", "cpgr", "adduser", "addgroup", "deluser", "delgroup"
+]
+
+shadowutils_binaries := [
+    "chage", "gpasswd", "lastlog", "newgrp", "sg", "adduser", "deluser", "chpasswd",
+    "groupadd", "groupdel", "addgroup", "delgroup", "groupmems", "groupmod", "grpck", "grpconv", "grpunconv",
+    "newusers", "pwck", "pwconv", "pwunconv", "useradd", "userdel", "usermod", "vigr", "vipw", "unix_chkpwd"
+]
+
+user_mgmt_binaries[name] { name := login_binaries[_] }
+user_mgmt_binaries[name] { name := passwd_binaries[_] }
+user_mgmt_binaries[name] { name := shadowutils_binaries[_] }
+
+allowed_user_mgmt_bins := [ "su", "sudo", "lastlog", "nologin", "unix_chkpwd" ]
+process_in_allowed_bins {
+	input.process.name = allowed_user_mgmt_bins[_]
+}
+allowed_parent_user_mgmt_bins := [ "cron_binaries", "systemd", "systemd.postins", "udev.postinst", "run-parts" ]
+process_in_allowed_parent_user_mgmt_bins {
+	input.process.parent.name = allowed_parent_user_mgmt_bins[_]
 }
 

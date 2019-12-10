@@ -59,6 +59,9 @@ import data.macros.package_management_ancestor_process
 import data.macros.inside_container
 import data.macros.k8s_api_server
 import data.macros.proc_in_change_thread_ns_binaries
+import data.macros.user_management_binaries
+import data.macros.process_in_allowed_bins
+import data.macros.process_in_allowed_parent_user_mgmt_bins
 
 open_sensitive_files = input {
 	open_read
@@ -274,9 +277,22 @@ Change_thread_namespace = input {
 	not startswith(input.process.name, "containerd")
 }
 
-Contact_EC2_Instance_Metadata_Service_From_Container {
+Contact_EC2_Instance_Metadata_Service_From_Container = input {
 	outbound_network_connection
 	input.event.params.destination_ip = "169.254.169.254"
 	inside_container
+}
+
+User_mgmt_binaries = input {
+	spawned_process
+	input.process.name = user_management_binaries[_]
+	not inside_container
+	not process_in_allowed_bins
+	not process_in_allowed_parent_user_mgmt_bins
+
+	cmdline := concat(" ", input.process.args)
+    not startswith(cmdline, "passwd -S")
+    not startswith(cmdline, "useradd -D")
+    not startswith(cmdline, "systemd --version")
 }
 
