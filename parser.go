@@ -27,9 +27,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/davecgh/go-spew/spew"
-	"github.com/the-redback/go-oneliners"
 )
 
 const (
@@ -140,7 +137,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
-			// oneliners.PrettyJson(proc)
 
 		case 186: // procexit
 			go func() {
@@ -316,7 +312,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			}
 			// oneliners.PrettyJson(evt)
 		case 315: //chmod
-			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
 					continue
@@ -335,7 +330,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			}
 			// oneliners.PrettyJson(evt)
 		case 317: //fchmod
-			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
 					continue
@@ -354,7 +348,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 			}
 			// oneliners.PrettyJson(evt)
 		case 313: //fchmodat
-			spew.Dump(paramLens)
 			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
 				if paramLens[i] == 0 {
 					continue
@@ -385,7 +378,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 
 				switch i {
 				case 0:
-					sock.fd = int(binary.LittleEndian.Uint32(rawParams))
+					sock.Fd = int(binary.LittleEndian.Uint32(rawParams))
 				case 1:
 					// evt.Params["domain"] = binary.LittleEndian.Uint32(rawParams)
 					domain := binary.LittleEndian.Uint32(rawParams)
@@ -398,20 +391,20 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					case 10:
 						socketDomain = IPv6_SOCKET
 					}
-					sock.domain = socketDomain
+					sock.Domain = socketDomain
 
 				case 2:
 					packetType := binary.LittleEndian.Uint32(rawParams)
-					var socketType string
+					var l4proto string
 					switch packetType {
 					case 1:
-						socketType = "SOCK_STREAM"
+						l4proto = "tcp"
 					case 2:
-						socketType = "SOCK_DGRAM"
+						l4proto = "udp"
 					}
-					sock.socktype = socketType
+					sock.Type = l4proto
 				case 3:
-					sock.proto = int(binary.LittleEndian.Uint16(rawParams))
+					sock.Proto = int(binary.LittleEndian.Uint16(rawParams))
 				}
 
 				add_socket(sock)
@@ -428,7 +421,14 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				//
 				switch i {
 				case 0:
-					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+					fd := binary.LittleEndian.Uint64(rawParams)
+					evt.Params["fd"] = fd
+
+					sockMapMutex.RLock()
+					socket := sockMap[int(fd)]
+					sockMapMutex.RUnlock()
+
+					evt.Params["socket"] = socket
 				case 1:
 					socketDomain := uint8(rawParams[0])
 					rawParams = rawParams[1:]
@@ -469,7 +469,14 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 
 				switch i {
 				case 0:
-					evt.Params["socket_fd"] = binary.LittleEndian.Uint32(rawParams)
+					socket_fd := binary.LittleEndian.Uint32(rawParams)
+					evt.Params["socket_fd"] = socket_fd
+
+					sockMapMutex.RLock()
+					socket := sockMap[int(socket_fd)]
+					sockMapMutex.RUnlock()
+
+					evt.Params["socket"] = socket
 				}
 			}
 		case 23: //connect exit
@@ -514,7 +521,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					}
 				}
 			}
-			// oneliners.PrettyJson(evt)
 		}
 
 		opaQueryCh <- evt
@@ -557,17 +563,17 @@ func convertToStringSlice(rawParams []byte) []string {
 }
 
 type socket struct {
-	fd       int
-	domain   string
-	socktype string
-	proto    int
+	Fd     int
+	Domain string
+	Type   string
+	Proto  int
 }
 
 var sockMap = make(map[int]socket)
-var mu sync.Mutex
+var sockMapMutex sync.RWMutex
 
 func add_socket(s socket) {
-	mu.Lock()
-	sockMap[s.fd] = s
-	mu.Unlock()
+	sockMapMutex.Lock()
+	sockMap[s.Fd] = s
+	sockMapMutex.Unlock()
 }

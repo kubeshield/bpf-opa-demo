@@ -705,3 +705,32 @@ process_in_allowed_parent_user_mgmt_bins {
 	input.process.parent.name = allowed_parent_user_mgmt_bins[_]
 }
 
+test_connect_ports := [ "0", "9", "80", "3306" ]
+openvpn_udp_ports := [ "1194", "1197", "1198", "8080", "9201" ]
+l2tp_udp_ports := [ "500", "1701", "4500", "10000" ]
+statsd_ports := [ "8125" ]
+ntp_ports := [ "123" ]
+
+expected_udp_ports[port] {
+	port := "53"
+}
+unexpected_udp_ports[port] {
+	port := openvpn_udp_ports[_]
+}
+unexpected_udp_ports[port] {
+	port := l2tp_udp_ports[_]
+}
+unexpected_udp_ports[port] {
+	port := statsd_ports[_]
+}
+unexpected_udp_ports[port] {
+	port := ntp_ports[_]
+}
+unexpected_udp_ports[port] {
+	port := test_connect_ports[_]
+}
+
+expected_udp_traffic {
+	input.event.params.destination_port = unexpected_udp_ports[_]
+}
+
