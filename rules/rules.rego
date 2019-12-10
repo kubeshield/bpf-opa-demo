@@ -58,6 +58,7 @@ import data.macros.net_miner_pool
 import data.macros.package_management_ancestor_process
 import data.macros.inside_container
 import data.macros.k8s_api_server
+import data.macros.proc_in_change_thread_ns_binaries
 
 open_sensitive_files = input {
 	open_read
@@ -265,3 +266,17 @@ Unexpected_K8s_NodePort_Connection = input {
 	input.event.params.destination_port >= 30000
 	input.event.params.destination_port <= 32767
 }
+
+Change_thread_namespace = input {
+	input.event.type = "setns"
+	not proc_in_change_thread_ns_binaries
+	not startswith(input.process.name, "runc")
+	not startswith(input.process.name, "containerd")
+}
+
+Contact_EC2_Instance_Metadata_Service_From_Container {
+	outbound_network_connection
+	input.event.params.destination_ip = "169.254.169.254"
+	inside_container
+}
+
