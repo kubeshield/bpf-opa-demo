@@ -690,3 +690,18 @@ DB_program_spawned_process {
 	not db_server_process
     not postgres_running_wal_e
 }
+
+docker_binaries := [ "docker", "dockerd", "exe", "docker-compose", "docker-entrypoi", "docker-runc-cur", "docker-current", "dockerd-current" ]
+k8s_binaries := [ "hyperkube", "skydns", "kube2sky", "exechealthz", "weave-net", "loopback", "bridge", "openshift-sdn", "openshift" ]
+lxd_binaries := [ "lxd", "lxcfs" ]
+thread_ns_binaries = [ "calico", "oci-umount", "nsenter", "sysdig" ]
+
+change_thread_ns_binaries[name] { name := docker_binaries[_] }
+change_thread_ns_binaries[name] { name := k8s_binaries[_] }
+change_thread_ns_binaries[name] { name := lxd_binaries[_] }
+change_thread_ns_binaries[name] { name := thread_ns_binaries[_] }
+
+proc_in_change_thread_ns_binaries {
+	input.process.name = change_thread_ns_binaries[_]
+}
+
