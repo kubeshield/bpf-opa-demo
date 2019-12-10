@@ -62,6 +62,8 @@ import data.macros.proc_in_change_thread_ns_binaries
 import data.macros.user_management_binaries
 import data.macros.process_in_allowed_bins
 import data.macros.process_in_allowed_parent_user_mgmt_bins
+import data.macros.inbound_outbound
+import data.macros.expected_udp_traffic
 
 open_sensitive_files = input {
 	open_read
@@ -296,3 +298,8 @@ User_mgmt_binaries = input {
     not startswith(cmdline, "systemd --version")
 }
 
+Unexpected_UDP_Traffic = input {
+	inbound_outbound
+	not expected_udp_traffic
+	input.event.params.socket.type = "udp"
+}
