@@ -24,6 +24,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os/user"
 
 	"go.kubeshield.dev/bpf-opa-demo/rules"
 
@@ -47,14 +48,15 @@ type syscallEvent struct {
 }
 
 type Process struct {
-	Name       string   `json:"name"`
-	Pid        uint64   `json:"pid"`
-	Ppid       uint64   `json:"ppid"`
-	Executable string   `json:"executable"`
-	Args       []string `json:"args"`
-	Command    string   `json:"command"`
-	Cgroup     []string `json:"cgroup"`
-	Parent     *Process `json:"parent"`
+	Name       string     `json:"name"`
+	Pid        uint64     `json:"pid"`
+	Ppid       uint64     `json:"ppid"`
+	Executable string     `json:"executable"`
+	Args       []string   `json:"args"`
+	Command    string     `json:"command"`
+	Cgroup     []string   `json:"cgroup"`
+	Parent     *Process   `json:"parent"`
+	User       *user.User `json:"user""`
 }
 
 // func queryToOPA(evt *syscallEvent) {
