@@ -64,6 +64,11 @@ import data.macros.process_in_allowed_bins
 import data.macros.process_in_allowed_parent_user_mgmt_bins
 import data.macros.inbound_outbound
 import data.macros.expected_udp_traffic
+import data.macros.monitored_dir
+import data.macros.google_accounts_daemon_writing_ssh
+import data.macros.cloud_init_writing_ssh
+import data.macros.coreos_write_ssh_dir
+import data.macros.python_running_ms_oms
 
 open_sensitive_files = input {
 	open_read
@@ -302,4 +307,17 @@ Unexpected_UDP_Traffic = input {
 	inbound_outbound
 	not expected_udp_traffic
 	input.event.params.socket.type = "udp"
+}
+
+
+Write_below_monitored_dir = input {
+	open_write
+	monitored_dir
+	not package_management_process
+    not exe_running_docker_save
+    not python_running_get_pip
+    not python_running_ms_oms
+    not google_accounts_daemon_writing_ssh
+    not cloud_init_writing_ssh
+    not coreos_write_ssh_dir
 }
