@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -134,6 +135,9 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				}
 				data = data[paramLens[i]:]
 			}
+
+			proc.User = addUserName(int(evt.Tid))
+
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
@@ -576,4 +580,30 @@ func add_socket(s socket) {
 	sockMapMutex.Lock()
 	sockMap[s.Fd] = s
 	sockMapMutex.Unlock()
+}
+
+func addUserName(pid int) *user.User {
+	filename := fmt.Sprintf("/proc/%d/status", pid)
+	f, err := os.Open(filename)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+	for i := 0; i < 9; i++ {
+		s.Scan()
+	}
+	text := s.Text()
+	var uid int
+	if _, err := fmt.Sscanf(text, "Uid:\t%d", &uid); err != nil {
+		return nil
+	}
+
+	u, err := user.LookupId(fmt.Sprint("%d", uid))
+	if err != nil {
+		return nil
+	}
+
+	return u
 }

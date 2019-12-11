@@ -71,6 +71,8 @@ import data.macros.coreos_write_ssh_dir
 import data.macros.python_running_ms_oms
 import data.macros.protected_shell_spawner
 import data.macros.proc_cmdline_in_known_cmdlines
+import data.macros.in_system_users
+import data.macros.interactive
 
 open_sensitive_files = input {
 	open_read
@@ -329,4 +331,10 @@ Run_shell_untrusted = input {
     is_shell_process
     protected_shell_spawner
     not proc_cmdline_in_known_cmdlines
+}
+
+System_user_interactive = input {
+	spawned_process
+	in_system_users
+	interactive
 }

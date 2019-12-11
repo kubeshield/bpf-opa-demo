@@ -836,4 +836,22 @@ proc_cmdline_in_known_cmdlines {
 	startswith(cmdline, known_shell_spawn_cmdlines[_])
 }
 
+interactive {
+    not input.process.name = "sshd"
+    input.process.parent.name = "sshd"
+}
+interactive {
+	login_process
+}
+login_process {
+    input.process.name = "systemd-logind"
+}
+login_process {
+    input.process.name = "login"
+}
+
+system_users := ["bin", "daemon", "games", "lp", "mail", "nobody", "sshd", "sync", "uucp", "www-data"]
+in_system_users {
+	input.process.user.username = system_users[_]
+}
 
