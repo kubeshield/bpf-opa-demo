@@ -769,4 +769,71 @@ write_monitored_directory_or_ssh_dir {
 	user_ssh_directory
 }
 
+protected_shell_spawning_binaries := [
+    "http_server_binaries", "db_server_binaries", "nosql_server_binaries", "mail_binaries",
+    "fluentd", "flanneld", "splunkd", "consul", "smbd", "runsv", "PM2"
+]
+
+protected_shell_spawner {
+	input.process.parent.name = protected_shell_spawning_binaries[_]
+}
+
+gitlab_binaries := [ "gitlab-shell", "gitlab-mon", "gitlab-runner-b", "git" ]
+cron_binaries := ["anacron", "cron", "crond", "crontab"]
+needrestart_binaries := ["needrestart", "10-dpkg", "20-rpm", "30-pacman"]
+mesos_shell_binaries := ["mesos-docker-ex", "mesos-slave", "mesos-health-ch"]
+
+run_shell_allowed_parents[name] { name := shell_binaries[_] }
+run_shell_allowed_parents[name] { name := gitlab_binaries[_] }
+run_shell_allowed_parents[name] { name := cron_binaries[_] }
+run_shell_allowed_parents[name] { name := needrestart_binaries[_] }
+run_shell_allowed_parents[name] { name := mesos_shell_binaries[_] }
+run_shell_allowed_parents[name] {
+	bins := ["erl_child_setup", "exechealthz",
+		"PM2", "PassengerWatchd", "c_rehash", "svlogd", "logrotate", "hhvm", "serf",
+		"lb-controller", "nvidia-installe", "runsv", "statsite", "erlexec"]
+	name := bins[_]
+}
+
+known_shell_spawn_cmdlines := [
+    "sh -c uname -p 2> /dev/null",
+    "sh -c uname -s 2>&1",
+    "sh -c uname -r 2>&1",
+    "sh -c uname -v 2>&1",
+    "sh -c uname -a 2>&1",
+    "sh -c ruby -v 2>&1",
+    "sh -c getconf CLK_TCK",
+    "sh -c getconf PAGESIZE",
+    "sh -c LC_ALL=C LANG=C /sbin/ldconfig -p 2>/dev/null",
+    "sh -c LANG=C /sbin/ldconfig -p 2>/dev/null",
+    "sh -c /sbin/ldconfig -p 2>/dev/null",
+    "sh -c stty -a 2>/dev/null",
+    "sh -c stty -a < /dev/tty",
+    "sh -c stty -g < /dev/tty",
+    "sh -c node index.js",
+    "sh -c node index",
+    "sh -c node ./src/start.js",
+    "sh -c node app.js",
+    "sh -c node -e \"require(''nan'')\"",
+    "sh -c node -e \"require(''nan'')\")",
+    "sh -c node $NODE_DEBUG_OPTION index.js ",
+    "sh -c crontab -l 2",
+    "sh -c lsb_release -a",
+    "sh -c lsb_release -is 2>/dev/null",
+    "sh -c whoami",
+    "sh -c node_modules/.bin/bower-installer",
+    "sh -c /bin/hostname -f 2> /dev/null",
+    "sh -c locale -a",
+    "sh -c  -t -i",
+    "sh -c openssl version",
+    "bash -c id -Gn kafadmin",
+    "sh -c /bin/sh -c ''date +%%s''"
+    ]
+
+
+proc_cmdline_in_known_cmdlines {
+	cmdline := concat(" ", input.process.args)
+	startswith(cmdline, known_shell_spawn_cmdlines[_])
+}
+
 

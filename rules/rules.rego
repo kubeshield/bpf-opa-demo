@@ -69,6 +69,8 @@ import data.macros.google_accounts_daemon_writing_ssh
 import data.macros.cloud_init_writing_ssh
 import data.macros.coreos_write_ssh_dir
 import data.macros.python_running_ms_oms
+import data.macros.protected_shell_spawner
+import data.macros.proc_cmdline_in_known_cmdlines
 
 open_sensitive_files = input {
 	open_read
@@ -320,4 +322,11 @@ Write_below_monitored_dir = input {
     not google_accounts_daemon_writing_ssh
     not cloud_init_writing_ssh
     not coreos_write_ssh_dir
+}
+
+Run_shell_untrusted = input {
+    spawned_process
+    is_shell_process
+    protected_shell_spawner
+    not proc_cmdline_in_known_cmdlines
 }
