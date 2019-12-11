@@ -214,7 +214,6 @@ package_mgmt_binaries[bin] {
 }
 
 package_management_process {
-	# TODO: is it correct?
 	input.process.executable = package_mgmt_binaries[_]
 }
 package_management_ancestor_process {
@@ -733,4 +732,41 @@ unexpected_udp_ports[port] {
 expected_udp_traffic {
 	input.event.params.destination_port = unexpected_udp_ports[_]
 }
+
+
+monitored_directories := [ "/boot", "/lib", "/lib64", "/usr/lib", "/usr/local/lib", "/usr/local/sbin", "/usr/local/bin", "/root/.ssh", "/etc/cardserver" ]
+
+google_accounts_daemon_writing_ssh {
+	input.process.name=google_accounts
+	user_ssh_directory
+}
+
+cloud_init_writing_ssh {
+	input.process.name = "cloud-init"
+	user_ssh_directory
+}
+
+coreos_write_ssh_dir {
+	input.process.name = "update-ssh-keys"
+	file_inside_directory("/home/core/.ssh")
+}
+
+mkinitramfs_procs := [ "mkinitramfs", "update-initramf" ]
+
+mkinitramfs_writing_boot {
+	input.process.parent.name = mkinitramfs_procs[_]
+	file_inside_directory("/boot")
+}
+
+monitored_dir {
+	write_monitored_directory_or_ssh_dir
+	not mkinitramfs_writing_boot
+}
+write_monitored_directory_or_ssh_dir {
+	file_inside_directory(monitored_directories[_])
+}
+write_monitored_directory_or_ssh_dir {
+	user_ssh_directory
+}
+
 
