@@ -56,7 +56,7 @@ type Process struct {
 	Command    string     `json:"command"`
 	Cgroup     []string   `json:"cgroup"`
 	Parent     *Process   `json:"parent"`
-	User       *user.User `json:"user""`
+	User       *user.User `json:"user"`
 }
 
 // func queryToOPA(evt *syscallEvent) {

@@ -467,8 +467,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -488,8 +487,7 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 				if paramLens[i] == 0 {
 					continue
 				}
-				rawParams := make([]byte, paramLens[i])
-				rawParams = data[:paramLens[i]]
+				rawParams := data[:paramLens[i]]
 				data = data[paramLens[i]:]
 
 				switch i {
@@ -514,7 +512,6 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 
 						// net.ParseIP()
 						destination_port := binary.LittleEndian.Uint16(rawParams)
-						rawParams = rawParams[2:]
 
 						evt.Params["type"] = "AF_INET"
 						evt.Params["source_ip"] = source_ip
@@ -602,7 +599,7 @@ func addUserName(pid int) *user.User {
 		return nil
 	}
 
-	u, err := user.LookupId(fmt.Sprint("%d", uid))
+	u, err := user.LookupId(fmt.Sprintf("%d", uid))
 	if err != nil {
 		return nil
 	}
