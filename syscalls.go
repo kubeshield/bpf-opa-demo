@@ -776,6 +776,8 @@ const struct ppm_event_entry g_ppm_events[PPM_EVENT_MAX] = {
 	[PPME_SOCKET_CONNECT_X] = {FILLER_REF(sys_connect_x)},
 	[PPME_SYSCALL_SETNS_E] = {FILLER_REF(sys_setns_e)},
 	[PPME_SYSCALL_SETNS_X] = {FILLER_REF(sys_autofill), 1, APT_REG, {{AF_ID_RETVAL} } },
+	[PPME_SYSCALL_SETUID_E] = {FILLER_REF(sys_autofill), 1, APT_REG, {{0} } },
+	[PPME_SYSCALL_SETUID_X] = {FILLER_REF(sys_autofill), 1, APT_REG, {{AF_ID_RETVAL} } },
 };
 
 
