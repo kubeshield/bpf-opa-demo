@@ -855,3 +855,27 @@ in_system_users {
 	input.process.user.username = system_users[_]
 }
 
+known_setuid_binaries := [
+    "sshd", "dbus-daemon-lau", "ping", "ping6", "critical-stack-", "pmmcli",
+    "filemng", "PassengerAgent", "bwrap", "osdetect", "nginxmng", "sw-engine-fpm",
+    "start-stop-daem"
+]
+nomachine_binaries := [ "nxexec", "nxnode.bin", "nxserver.bin", "nxclient.bin" ]
+userexec_binaries := ["sudo", "su", "suexec", "critical-stack", "dzdo"]
+mail_binaries := [
+    "sendmail", "sendmail-msp", "postfix", "procmail", "exim4",
+    "pickup", "showq", "mailq", "dovecot", "imap-login", "imap",
+    "mailmng-core", "pop3-login", "dovecot-lda", "pop3"
+]
+
+allowed_setuid_bins[name] { name := known_setuid_binaries[_] }
+allowed_setuid_bins[name] { name := userexec_binaries[_] }
+allowed_setuid_bins[name] { name := mail_binaries[_] }
+allowed_setuid_bins[name] { name := docker_binaries[_] }
+allowed_setuid_bins[name] { name := nomachine_binaries[_] }
+
+process_in_allowed_setuid_bins {
+	input.process.namee = allowed_setuid_bins[_]
+}
+
+

@@ -73,6 +73,7 @@ import data.macros.protected_shell_spawner
 import data.macros.proc_cmdline_in_known_cmdlines
 import data.macros.in_system_users
 import data.macros.interactive
+import data.macros.process_in_known_setuid_bins
 
 open_sensitive_files = input {
 	open_read
@@ -337,4 +338,12 @@ System_user_interactive = input {
 	spawned_process
 	in_system_users
 	interactive
+}
+
+Non_sudo_setuid = input {
+    input.event.name = "setuid"
+    not inside_container
+    not input.process.username = "root"
+    not process_in_known_setuid_bins
+    not startswith(input.process.name, "runc:")
 }

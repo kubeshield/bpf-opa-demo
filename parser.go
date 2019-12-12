@@ -525,6 +525,8 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 					}
 				}
 			}
+		case 198:
+			evt.Params["uid"] = binary.LittleEndian.Uint32(data)
 		}
 
 		opaQueryCh <- evt
