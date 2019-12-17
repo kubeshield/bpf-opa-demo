@@ -55,13 +55,31 @@ var (
 	selfName     = "bpf-opa-demo"
 	selfPidMutex sync.RWMutex
 	selfPid      = make(map[int]bool)
+
+	procDir   string
+	procDirFS procfs.FS
 )
 
 func main() {
 	klog.InitFlags(nil)
+
+	flag.StringVar(&procDir, "procdir", "/proc", "")
 	flag.Parse()
 
+	logger.Info("starting")
+
+	go func() {
+		if err := SetupPodWatcher(); err != nil {
+			panic(err)
+		}
+	}()
+
 	cpuRange, err := cpuonline.Get()
+	if err != nil {
+		panic(err)
+	}
+
+	procDirFS, err = procfs.NewFS(procDir)
 	if err != nil {
 		panic(err)
 	}
@@ -235,7 +253,7 @@ func processPerfEventData(evtDataCh chan []byte) {
 }
 
 func loadAllProcess() {
-	procs, err := procfs.AllProcs()
+	procs, err := procDirFS.AllProcs()
 	if err != nil {
 		logger.Error(err, "failed to read /proc")
 	}

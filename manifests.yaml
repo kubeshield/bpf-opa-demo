@@ -1,0 +1,97 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: bpf-opa-demo
+spec:
+  containers:
+    - image: tahsin/bpf-opa-demo
+      imagePullPolicy: Always
+      name: bpf-opa-demo
+      securityContext:
+        privileged: true
+      args:
+        - "--procdir"
+        - "/host/proc"
+      volumeMounts:
+          - mountPath: /host/var/run/docker.sock
+            name: docker-socket
+          - mountPath: /host/run/containerd/containerd.sock
+            name: containerd-socket
+          - mountPath: /host/dev
+            name: dev-fs
+          - mountPath: /host/proc
+            name: proc-fs
+            readOnly: true
+          - mountPath: /host/boot
+            name: boot-fs
+            readOnly: true
+          - mountPath: /host/lib/modules
+            name: lib-modules
+            readOnly: true
+          - mountPath: /host/usr
+            name: usr-fs
+            readOnly: true
+          - mountPath: /host/etc/
+            name: etc-fs
+            readOnly: true
+    - name: opa
+      image: openpolicyagent/opa:latest
+      ports:
+        - name: http
+          containerPort: 8181
+      args:
+        - "run"
+        - "--ignore=.*"  # exclude hidden dirs created by Kubernetes
+        - "--server"
+  volumes:
+    - name: docker-socket
+      hostPath:
+        path: /var/run/docker.sock
+    - name: containerd-socket
+      hostPath:
+        path: /run/containerd/containerd.sock
+    - name: dev-fs
+      hostPath:
+        path: /dev
+    - name: proc-fs
+      hostPath:
+        path: /proc
+    - name: boot-fs
+      hostPath:
+        path: /boot
+    - name: lib-modules
+      hostPath:
+        path: /lib/modules
+    - name: usr-fs
+      hostPath:
+        path: /usr
+    - name: etc-fs
+      hostPath:
+        path: /etc
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: bpf-opa-demo-role
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+    verbs:
+      - list
+      - watch
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: bpf-opa-demo-rolebinding
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: bpf-opa-demo-role
+subjects:
+  - kind: ServiceAccount
+    name: default
+    namespace: default

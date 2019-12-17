@@ -138,6 +138,13 @@ func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallE
 
 			proc.User = addUserName(int(evt.Tid))
 
+			if len(proc.Cgroup) > 0 && strings.HasPrefix(proc.Cgroup[0], "cpuset=/docker/") {
+				proc.ContainerID = proc.Cgroup[0][15:(15 + 64)]
+				PodMapMutex.RLock()
+				proc.Pod = PodMap[proc.ContainerID]
+				PodMapMutex.RUnlock()
+			}
+
 			processMapLock.Lock()
 			processMap[evt.Tid] = proc
 			processMapLock.Unlock()
@@ -582,7 +589,7 @@ func add_socket(s socket) {
 }
 
 func addUserName(pid int) *user.User {
-	filename := fmt.Sprintf("/proc/%d/status", pid)
+	filename := filepath.Join(procDir, fmt.Sprintf("/%d/status", pid))
 	f, err := os.Open(filename)
 	if err != nil {
 		return nil
