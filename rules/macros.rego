@@ -879,3 +879,17 @@ process_in_allowed_setuid_bins {
 }
 
 
+container_list[container] {
+	container := input.process.pod.spec.containers[_]
+}
+container_list[container] {
+	container := input.process.pod.spec.initContainers[_]
+}
+
+sensitive_mount_paths := { "/proc", "/var/run/docker.sock", "/var/lib/kubelet", "/var/lib/kubelet/pki", "/", "/etc", "/root" }
+
+sensitive_mount {
+	container := container_list[_]
+	container.volumeMounts = sensitive_mount_paths[_]
+}
+
