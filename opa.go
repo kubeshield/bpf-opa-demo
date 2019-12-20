@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os/user"
+	"sync"
 
 	"go.kubeshield.dev/bpf-opa-demo/rules"
 
@@ -61,11 +62,9 @@ type Process struct {
 	Pod         *v1.Pod    `json:"pod"`
 }
 
-// func queryToOPA(evt *syscallEvent) {
-func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
-	for {
-		evt := <-opaQueryCh
-
+func querySyscallEventToOPA(wg *sync.WaitGroup, opaQueryCh chan *syscallEvent) {
+	defer wg.Done()
+	for evt := range opaQueryCh {
 		processMapLock.RLock()
 		proc := processMap[evt.Tid]
 		parent := processMap[proc.Ppid]
@@ -117,7 +116,6 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 			continue
 		}
 
-		// spew.Dump(opaResult["result"])
 		oneliners.PrettyJson(opaResult["result"])
 	}
 }
