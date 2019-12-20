@@ -74,6 +74,7 @@ import data.macros.proc_cmdline_in_known_cmdlines
 import data.macros.in_system_users
 import data.macros.interactive
 import data.macros.process_in_known_setuid_bins
+import data.macros.sensitive_mount
 
 open_sensitive_files = input {
 	open_read
@@ -346,4 +347,15 @@ Non_sudo_setuid = input {
     not input.process.username = "root"
     not process_in_known_setuid_bins
     not startswith(input.process.name, "runc:")
+}
+
+Launch_Privileged_Container = input {
+	input.process.pod.spec.containers[_].securityContext.privileged
+}
+Launch_Privileged_Container = input {
+	input.process.pod.spec.initContainers[_].securityContext.privileged
+}
+
+Launch_Sensitive_Mount_Container = input {
+	sensitive_mount
 }

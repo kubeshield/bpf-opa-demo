@@ -28,8 +28,8 @@ import (
 
 	"go.kubeshield.dev/bpf-opa-demo/rules"
 
-	"github.com/prometheus/procfs"
 	"github.com/the-redback/go-oneliners"
+	v1 "k8s.io/api/core/v1"
 )
 
 type opaRequest struct {
@@ -48,15 +48,17 @@ type syscallEvent struct {
 }
 
 type Process struct {
-	Name       string     `json:"name"`
-	Pid        uint64     `json:"pid"`
-	Ppid       uint64     `json:"ppid"`
-	Executable string     `json:"executable"`
-	Args       []string   `json:"args"`
-	Command    string     `json:"command"`
-	Cgroup     []string   `json:"cgroup"`
-	Parent     *Process   `json:"parent"`
-	User       *user.User `json:"user"`
+	Name        string     `json:"name"`
+	Pid         uint64     `json:"pid"`
+	Ppid        uint64     `json:"ppid"`
+	Executable  string     `json:"executable"`
+	Args        []string   `json:"args"`
+	Command     string     `json:"command"`
+	Cgroup      []string   `json:"cgroup"`
+	Parent      *Process   `json:"parent"`
+	User        *user.User `json:"user"`
+	ContainerID string     `json:"containerID"`
+	Pod         *v1.Pod    `json:"pod"`
 }
 
 // func queryToOPA(evt *syscallEvent) {
@@ -70,11 +72,11 @@ func querySyscallEventToOPA(opaQueryCh chan *syscallEvent) {
 		processMapLock.RUnlock()
 
 		if proc.Pid == 0 {
-			p, _ := procfs.NewProc(int(evt.Tid))
+			p, _ := procDirFS.Proc(int(evt.Tid))
 			proc = getProcessInfo(p)
 		}
 		if parent.Pid == 0 {
-			p, _ := procfs.NewProc(int(proc.Ppid))
+			p, _ := procDirFS.Proc(int(proc.Ppid))
 			parent = getProcessInfo(p)
 		}
 
