@@ -41,500 +41,491 @@ var (
 	processMap     = map[uint64]Process{}
 )
 
-func parseRawSyscallData(parseCh chan *rawSyscallData, opaQueryCh chan *syscallEvent) {
-	for {
-		rawSyscallData := <-parseCh
-		perfEvtHeader := rawSyscallData.perfEventHeader
-		data := rawSyscallData.data
+func parseRawSyscallData(perfEvtHeader *perfEventHeader, data []byte, opaQueryCh chan *syscallEvent) {
+	evt := &syscallEvent{}
+	evt.perfEventHeader = perfEvtHeader
+	evt.Params = make(map[string]interface{})
 
-		// oneliners.PrettyJson(perfEvtHeader)
+	paramLens := make([]uint16, perfEvtHeader.Nparams)
 
-		evt := &syscallEvent{}
-		evt.perfEventHeader = perfEvtHeader
-		evt.Params = make(map[string]interface{})
+	err := binary.Read(bytes.NewReader(data), binary.LittleEndian, paramLens)
+	if err != nil {
+		logger.Error(err, "error reading param length data")
+		return
+	}
 
-		paramLens := make([]uint16, perfEvtHeader.Nparams)
+	data = data[binary.Size(paramLens):]
 
-		err := binary.Read(bytes.NewReader(data), binary.LittleEndian, paramLens)
-		if err != nil {
-			logger.Error(err, "error reading param length data")
-			continue
-		}
-
-		data = data[binary.Size(paramLens):]
-
-		switch perfEvtHeader.Type {
-		case 307: // openat exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-
-				switch i {
-				case 0:
-					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					// ignore the last byte \u000
-					evt.Params["name"] = string(rawParams[:paramLens[i]-1])
-				case 3:
-					evt.Params["flags"] = binary.LittleEndian.Uint32(rawParams)
-				case 4:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				case 5:
-					evt.Params["dev"] = binary.LittleEndian.Uint32(rawParams)
-				}
-				data = data[paramLens[i]:]
-			}
-		case 293: // execve_exit
-			var proc Process
-
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["exe"] = string(rawParams[:paramLens[i]-1])
-					proc.Executable = evt.Params["exe"].(string)
-				case 13:
-					evt.Params["comm"] = string(rawParams[:paramLens[i]-1])
-					proc.Command = evt.Params["comm"].(string)
-				case 2:
-					evt.Params["args"] = convertToStringSlice(rawParams)
-					proc.Args = evt.Params["args"].([]string)
-				case 4:
-					evt.Params["pid"] = binary.LittleEndian.Uint64(rawParams)
-					proc.Pid = evt.Params["pid"].(uint64)
-				case 5:
-					evt.Params["ppid"] = binary.LittleEndian.Uint64(rawParams)
-					proc.Ppid = evt.Params["ppid"].(uint64)
-				case 7:
-					evt.Params["fdlimit"] = binary.LittleEndian.Uint64(rawParams)
-				case 8:
-					evt.Params["pgflt_maj"] = binary.LittleEndian.Uint64(rawParams)
-				case 9:
-					evt.Params["pgflt_min"] = binary.LittleEndian.Uint64(rawParams)
-				case 10:
-					evt.Params["vm_size"] = binary.LittleEndian.Uint32(rawParams)
-				case 11:
-					evt.Params["vm_rss"] = binary.LittleEndian.Uint32(rawParams)
-				case 12:
-					evt.Params["vm_swap"] = binary.LittleEndian.Uint32(rawParams)
-				case 15:
-					evt.Params["env"] = convertToStringSlice(rawParams)
-				case 14:
-					evt.Params["cgroup"] = convertToStringSlice(rawParams)
-					proc.Cgroup = evt.Params["cgroup"].([]string)
-				}
-				data = data[paramLens[i]:]
-			}
-
-			proc.User = addUserName(int(evt.Tid))
-
-			if len(proc.Cgroup) > 0 && strings.HasPrefix(proc.Cgroup[0], "cpuset=/docker/") {
-				proc.ContainerID = proc.Cgroup[0][15:(15 + 64)]
-				PodMapMutex.RLock()
-				proc.Pod = PodMap[proc.ContainerID]
-				PodMapMutex.RUnlock()
-			}
-
-			processMapLock.Lock()
-			processMap[evt.Tid] = proc
-			processMapLock.Unlock()
-
-		case 186: // procexit
-			go func() {
-				// wait 1 second before deleting process from map
-				time.Sleep(time.Second)
-				processMapLock.Lock()
-				delete(processMap, evt.Tid)
-				processMapLock.Unlock()
-			}()
-
-		case 175: // rename exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
-				case 2:
-					evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-		case 177: // renameat exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["olddirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
-				case 3:
-					evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 4:
-					evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-		case 277: // mkdir exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 305: // mkdirat exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
-				case 3:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 279: // rmdir exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 301: // unlink exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 303: // unlinkat exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
-				case 3:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 179: //symlink
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["target"] = string(rawParams[:paramLens[i]-1])
-				case 2:
-					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 181: //symlinkat
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["target"] = string(rawParams[:paramLens[i]-1])
-				case 2:
-					evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 3:
-					evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 315: //chmod
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
-				case 2:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 317: //fchmod
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				}
-			}
-			// oneliners.PrettyJson(evt)
-		case 313: //fchmodat
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
-				case 1:
-					evt.Params["dfd"] = binary.LittleEndian.Uint64(rawParams)
-				case 2:
-					evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
-				case 3:
-					evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
-				}
-			}
-		case 19: //socket exit
-			// oneliners.PrettyJson(paramLens)
-			sock := socket{}
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-
-				switch i {
-				case 0:
-					sock.Fd = int(binary.LittleEndian.Uint32(rawParams))
-				case 1:
-					// evt.Params["domain"] = binary.LittleEndian.Uint32(rawParams)
-					domain := binary.LittleEndian.Uint32(rawParams)
-					var socketDomain string
-					switch domain {
-					case 1:
-						socketDomain = UNIX_SOCKET
-					case 2:
-						socketDomain = IPv4_SOCKET
-					case 10:
-						socketDomain = IPv6_SOCKET
-					}
-					sock.Domain = socketDomain
-
-				case 2:
-					packetType := binary.LittleEndian.Uint32(rawParams)
-					var l4proto string
-					switch packetType {
-					case 1:
-						l4proto = "tcp"
-					case 2:
-						l4proto = "udp"
-					}
-					sock.Type = l4proto
-				case 3:
-					sock.Proto = int(binary.LittleEndian.Uint16(rawParams))
-				}
-
-				add_socket(sock)
-
+	switch perfEvtHeader.Type {
+	case 307: // openat exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
 				continue
 			}
-		case 247: //accept
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
-				//
-				switch i {
-				case 0:
-					fd := binary.LittleEndian.Uint64(rawParams)
-					evt.Params["fd"] = fd
+			rawParams := data[:paramLens[i]]
 
-					sockMapMutex.RLock()
-					socket := sockMap[int(fd)]
-					sockMapMutex.RUnlock()
-
-					evt.Params["socket"] = socket
-				case 1:
-					socketDomain := uint8(rawParams[0])
-					rawParams = rawParams[1:]
-					if socketDomain == 1 {
-						destination := string(rawParams[16:])
-						evt.Params["destination"] = destination
-						evt.Params["type"] = "AF_UNIX"
-					} else if socketDomain == 2 {
-						source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
-						rawParams = rawParams[4:]
-
-						source_port := binary.LittleEndian.Uint16(rawParams)
-						rawParams = rawParams[2:]
-
-						destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
-						rawParams = rawParams[4:]
-
-						destination_port := binary.LittleEndian.Uint16(rawParams)
-
-						evt.Params["type"] = "AF_INET"
-						evt.Params["source_ip"] = source_ip
-						evt.Params["source_port"] = source_port
-						evt.Params["destination_ip"] = destination_ip
-						evt.Params["destination_port"] = destination_port
-						evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
-					}
-				}
+			switch i {
+			case 0:
+				evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				// ignore the last byte \u000
+				evt.Params["name"] = string(rawParams[:paramLens[i]-1])
+			case 3:
+				evt.Params["flags"] = binary.LittleEndian.Uint32(rawParams)
+			case 4:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			case 5:
+				evt.Params["dev"] = binary.LittleEndian.Uint32(rawParams)
 			}
-			// oneliners.PrettyJson(evt)
-		case 22: //connect enter
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
+			data = data[paramLens[i]:]
+		}
+	case 293: // execve_exit
+		var proc Process
 
-				switch i {
-				case 0:
-					socket_fd := binary.LittleEndian.Uint32(rawParams)
-					evt.Params["socket_fd"] = socket_fd
-
-					sockMapMutex.RLock()
-					socket := sockMap[int(socket_fd)]
-					sockMapMutex.RUnlock()
-
-					evt.Params["socket"] = socket
-				}
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
 			}
-		case 23: //connect exit
-			for i := 0; i < int(perfEvtHeader.Nparams); i++ {
-				if paramLens[i] == 0 {
-					continue
-				}
-				rawParams := data[:paramLens[i]]
-				data = data[paramLens[i]:]
+			rawParams := data[:paramLens[i]]
 
-				switch i {
-				case 0:
-					evt.Params["ret"] = binary.LittleEndian.Uint32(rawParams)
-				case 1:
-					socketDomain := uint8(rawParams[0])
-					rawParams = rawParams[1:]
-					if socketDomain == 1 {
-						destination := string(rawParams[16:])
-						evt.Params["destination"] = destination
-						evt.Params["type"] = "AF_UNIX"
-					} else if socketDomain == 2 {
-						source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
-						rawParams = rawParams[4:]
-
-						source_port := binary.LittleEndian.Uint16(rawParams)
-						rawParams = rawParams[2:]
-
-						destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
-						rawParams = rawParams[4:]
-
-						// net.ParseIP()
-						destination_port := binary.LittleEndian.Uint16(rawParams)
-
-						evt.Params["type"] = "AF_INET"
-						evt.Params["source_ip"] = source_ip
-						evt.Params["source_port"] = source_port
-						evt.Params["destination_ip"] = destination_ip
-						evt.Params["destination_port"] = destination_port
-						evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
-					}
-				}
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["exe"] = string(rawParams[:paramLens[i]-1])
+				proc.Executable = evt.Params["exe"].(string)
+			case 13:
+				evt.Params["comm"] = string(rawParams[:paramLens[i]-1])
+				proc.Command = evt.Params["comm"].(string)
+			case 2:
+				evt.Params["args"] = convertToStringSlice(rawParams)
+				proc.Args = evt.Params["args"].([]string)
+			case 4:
+				evt.Params["pid"] = binary.LittleEndian.Uint64(rawParams)
+				proc.Pid = evt.Params["pid"].(uint64)
+			case 5:
+				evt.Params["ppid"] = binary.LittleEndian.Uint64(rawParams)
+				proc.Ppid = evt.Params["ppid"].(uint64)
+			case 7:
+				evt.Params["fdlimit"] = binary.LittleEndian.Uint64(rawParams)
+			case 8:
+				evt.Params["pgflt_maj"] = binary.LittleEndian.Uint64(rawParams)
+			case 9:
+				evt.Params["pgflt_min"] = binary.LittleEndian.Uint64(rawParams)
+			case 10:
+				evt.Params["vm_size"] = binary.LittleEndian.Uint32(rawParams)
+			case 11:
+				evt.Params["vm_rss"] = binary.LittleEndian.Uint32(rawParams)
+			case 12:
+				evt.Params["vm_swap"] = binary.LittleEndian.Uint32(rawParams)
+			case 15:
+				evt.Params["env"] = convertToStringSlice(rawParams)
+			case 14:
+				evt.Params["cgroup"] = convertToStringSlice(rawParams)
+				proc.Cgroup = evt.Params["cgroup"].([]string)
 			}
-		case 198:
-			evt.Params["uid"] = binary.LittleEndian.Uint32(data)
+			data = data[paramLens[i]:]
 		}
 
-		opaQueryCh <- evt
+		proc.User = addUserName(int(evt.Tid))
+
+		if len(proc.Cgroup) > 0 && strings.HasPrefix(proc.Cgroup[0], "cpuset=/docker/") {
+			proc.ContainerID = proc.Cgroup[0][15:(15 + 64)]
+			PodMapMutex.RLock()
+			proc.Pod = PodMap[proc.ContainerID]
+			PodMapMutex.RUnlock()
+		}
+
+		processMapLock.Lock()
+		processMap[evt.Tid] = proc
+		processMapLock.Unlock()
+
+	case 186: // procexit
+		go func() {
+			// wait 1 second before deleting process from map
+			time.Sleep(time.Second)
+			processMapLock.Lock()
+			delete(processMap, evt.Tid)
+			processMapLock.Unlock()
+		}()
+
+	case 175: // rename exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
+			case 2:
+				evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+	case 177: // renameat exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["olddirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				evt.Params["oldpath"] = string(rawParams[:paramLens[i]-1])
+			case 3:
+				evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 4:
+				evt.Params["newpath"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+	case 277: // mkdir exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 305: // mkdirat exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+			case 3:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 279: // rmdir exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 301: // unlink exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 303: // unlinkat exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["dirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				evt.Params["pathname"] = string(rawParams[:paramLens[i]-1])
+			case 3:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 179: //symlink
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["target"] = string(rawParams[:paramLens[i]-1])
+			case 2:
+				evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 181: //symlinkat
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["target"] = string(rawParams[:paramLens[i]-1])
+			case 2:
+				evt.Params["newdirfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 3:
+				evt.Params["linkpath"] = string(rawParams[:paramLens[i]-1])
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 315: //chmod
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
+			case 2:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 317: //fchmod
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["fd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 313: //fchmodat
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint64(rawParams)
+			case 1:
+				evt.Params["dfd"] = binary.LittleEndian.Uint64(rawParams)
+			case 2:
+				evt.Params["filename"] = string(rawParams[:paramLens[i]-1])
+			case 3:
+				evt.Params["mode"] = binary.LittleEndian.Uint32(rawParams)
+			}
+		}
+	case 19: //socket exit
+		// oneliners.PrettyJson(paramLens)
+		sock := socket{}
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				sock.Fd = int(binary.LittleEndian.Uint32(rawParams))
+			case 1:
+				// evt.Params["domain"] = binary.LittleEndian.Uint32(rawParams)
+				domain := binary.LittleEndian.Uint32(rawParams)
+				var socketDomain string
+				switch domain {
+				case 1:
+					socketDomain = UNIX_SOCKET
+				case 2:
+					socketDomain = IPv4_SOCKET
+				case 10:
+					socketDomain = IPv6_SOCKET
+				}
+				sock.Domain = socketDomain
+
+			case 2:
+				packetType := binary.LittleEndian.Uint32(rawParams)
+				var l4proto string
+				switch packetType {
+				case 1:
+					l4proto = "tcp"
+				case 2:
+					l4proto = "udp"
+				}
+				sock.Type = l4proto
+			case 3:
+				sock.Proto = int(binary.LittleEndian.Uint16(rawParams))
+			}
+
+			add_socket(sock)
+
+			continue
+		}
+	case 247: //accept
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+			//
+			switch i {
+			case 0:
+				fd := binary.LittleEndian.Uint64(rawParams)
+				evt.Params["fd"] = fd
+
+				sockMapMutex.RLock()
+				socket := sockMap[int(fd)]
+				sockMapMutex.RUnlock()
+
+				evt.Params["socket"] = socket
+			case 1:
+				socketDomain := uint8(rawParams[0])
+				rawParams = rawParams[1:]
+				if socketDomain == 1 {
+					destination := string(rawParams[16:])
+					evt.Params["destination"] = destination
+					evt.Params["type"] = "AF_UNIX"
+				} else if socketDomain == 2 {
+					source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+					rawParams = rawParams[4:]
+
+					source_port := binary.LittleEndian.Uint16(rawParams)
+					rawParams = rawParams[2:]
+
+					destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+					rawParams = rawParams[4:]
+
+					destination_port := binary.LittleEndian.Uint16(rawParams)
+
+					evt.Params["type"] = "AF_INET"
+					evt.Params["source_ip"] = source_ip
+					evt.Params["source_port"] = source_port
+					evt.Params["destination_ip"] = destination_ip
+					evt.Params["destination_port"] = destination_port
+					evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
+				}
+			}
+		}
+		// oneliners.PrettyJson(evt)
+	case 22: //connect enter
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				socket_fd := binary.LittleEndian.Uint32(rawParams)
+				evt.Params["socket_fd"] = socket_fd
+
+				sockMapMutex.RLock()
+				socket := sockMap[int(socket_fd)]
+				sockMapMutex.RUnlock()
+
+				evt.Params["socket"] = socket
+			}
+		}
+	case 23: //connect exit
+		for i := 0; i < int(perfEvtHeader.Nparams); i++ {
+			if paramLens[i] == 0 {
+				continue
+			}
+			rawParams := data[:paramLens[i]]
+			data = data[paramLens[i]:]
+
+			switch i {
+			case 0:
+				evt.Params["ret"] = binary.LittleEndian.Uint32(rawParams)
+			case 1:
+				socketDomain := uint8(rawParams[0])
+				rawParams = rawParams[1:]
+				if socketDomain == 1 {
+					destination := string(rawParams[16:])
+					evt.Params["destination"] = destination
+					evt.Params["type"] = "AF_UNIX"
+				} else if socketDomain == 2 {
+					source_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+					rawParams = rawParams[4:]
+
+					source_port := binary.LittleEndian.Uint16(rawParams)
+					rawParams = rawParams[2:]
+
+					destination_ip := net.IPv4(rawParams[0], rawParams[1], rawParams[2], rawParams[3])
+					rawParams = rawParams[4:]
+
+					// net.ParseIP()
+					destination_port := binary.LittleEndian.Uint16(rawParams)
+
+					evt.Params["type"] = "AF_INET"
+					evt.Params["source_ip"] = source_ip
+					evt.Params["source_port"] = source_port
+					evt.Params["destination_ip"] = destination_ip
+					evt.Params["destination_port"] = destination_port
+					evt.Params["DNS"], _ = net.LookupAddr(destination_ip.String())
+				}
+			}
+		}
+	case 198:
+		evt.Params["uid"] = binary.LittleEndian.Uint32(data)
 	}
+	opaQueryCh <- evt
 }
 
 // returns containerID from /proc/<pid>/cgroup file

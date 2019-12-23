@@ -19,12 +19,14 @@ package main
 import "C"
 import (
 	"bytes"
+	"context"
 	"encoding/binary"
 	"flag"
-	"io"
 	"os"
+	"os/signal"
 	"strings"
 	"sync"
+	"syscall"
 	"unsafe"
 
 	"go.kubeshield.dev/bpf-opa-demo/bpf"
@@ -43,11 +45,6 @@ type perfEventHeader struct {
 	Len     uint32 `json:"len"`
 	Type    uint16 `json:"type"`
 	Nparams uint32 `json:"nparams"`
-}
-
-type rawSyscallData struct {
-	perfEventHeader *perfEventHeader
-	data            []byte
 }
 
 var (
@@ -74,24 +71,12 @@ func main() {
 		}
 	}()
 
-	cpuRange, err := cpuonline.Get()
+	module, err := load_bpf_file()
 	if err != nil {
 		panic(err)
 	}
 
 	procDirFS, err = procfs.NewFS(procDir)
-	if err != nil {
-		panic(err)
-	}
-
-	// 0 indexed, so adding 1
-	noCPU := int(cpuRange[len(cpuRange)-1]) + 1
-
-	bpfProgram, err := bpf.Asset("probe.o")
-	if err != nil {
-		panic(err)
-	}
-	module, err := load_bpf_file(noCPU, bytes.NewReader(bpfProgram))
 	if err != nil {
 		panic(err)
 	}
@@ -110,20 +95,53 @@ func main() {
 
 	loadAllProcess()
 
-	perfMap, err := readFromPerfMap(module)
-	if err != nil {
-		logger.Error(err, "error reading from perf map")
-		panic(err)
-	}
-	defer perfMap.PollStop()
+	ctx, cancelFunc := context.WithCancel(context.Background())
 
-	sig := make(chan os.Signal)
-	<-sig
+	workerCount := 10
+	wg := &sync.WaitGroup{}
+	wg.Add(workerCount)
+
+	// start reading from perf map
+	go func() {
+		if err := readFromPerfMap(ctx, workerCount, wg, module); err != nil {
+			logger.Error(err, "error reading from perf map")
+			panic(err)
+		}
+	}()
+
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	<-done
+
+	cancelFunc()
+
+	if err := module.Close(); err != nil {
+		logger.Error(err, "failed to close module")
+	}
+	logger.Info("successfully closed bpf module")
+
+	// wait for all worker goroutines to close
+	wg.Wait()
+	logger.Info("all worker go-routines successfully exited")
+
 }
 
-func load_bpf_file(noCPU int, reader io.ReaderAt) (*elf.Module, error) {
-	m := elf.NewModuleFromReader(reader)
-	err := m.Load(map[string]elf.SectionParams{
+func load_bpf_file() (*elf.Module, error) {
+	cpuRange, err := cpuonline.Get()
+	if err != nil {
+		panic(err)
+	}
+
+	// 0 indexed, so adding 1
+	noCPU := int(cpuRange[len(cpuRange)-1]) + 1
+
+	bpfProgram, err := bpf.Asset("probe.o")
+	if err != nil {
+		panic(err)
+	}
+
+	m := elf.NewModuleFromReader(bytes.NewReader(bpfProgram))
+	err = m.Load(map[string]elf.SectionParams{
 		"maps/perf_map": {
 			MapMaxEntries: noCPU,
 		},
@@ -181,73 +199,56 @@ func load_bpf_file(noCPU int, reader io.ReaderAt) (*elf.Module, error) {
 	return m, nil
 }
 
-func readFromPerfMap(module *elf.Module) (*elf.PerfMap, error) {
-	receiveChan := make(chan []byte)
-	lostChan := make(chan uint64)
+func readFromPerfMap(ctx context.Context, workerCount int, wg *sync.WaitGroup, module *elf.Module) error {
+	receiveChan := make(chan []byte, 100000)
+	lostChan := make(chan uint64, 100000)
 
 	perfMap, err := elf.InitPerfMap(module, "perf_map", receiveChan, lostChan)
 	if err != nil {
-		return nil, err
+		return err
 	}
-
-	evtDataCh := make(chan []byte, 100000)
-	go processPerfEventData(evtDataCh)
-
-	go func() {
-		for {
-			select {
-			case data := <-receiveChan:
-				evtDataCh <- data
-
-			case data := <-lostChan:
-				logger.V(6).Info("lost events", "count", data)
-			}
-		}
-	}()
-
 	perfMap.PollStart()
+	defer perfMap.PollStop()
 
-	return perfMap, nil
-}
-
-func processPerfEventData(evtDataCh chan []byte) {
-	parseCh := make(chan *rawSyscallData)
-	opaQueryCh := make(chan *syscallEvent)
-	for i := 0; i < 10; i++ {
-		go parseRawSyscallData(parseCh, opaQueryCh)
-		go querySyscallEventToOPA(opaQueryCh)
+	opaQueryCh := make(chan *syscallEvent, 100000)
+	for i := 0; i < workerCount; i++ {
+		go querySyscallEventToOPA(wg, opaQueryCh)
 	}
 
 	for {
-		data := <-evtDataCh
+		select {
+		case <-ctx.Done():
+			logger.Info("returning from read from perf map")
+			close(opaQueryCh)
+			return nil
+		case data := <-receiveChan:
+			out := &perfEventHeader{}
+			err := binary.Read(bytes.NewReader(data), binary.LittleEndian, out)
+			if err != nil {
+				logger.V(6).Info("error reading event header data", "error", err)
+				continue
+			}
 
-		out := &perfEventHeader{}
-		err := binary.Read(bytes.NewReader(data), binary.LittleEndian, out)
-		if err != nil {
-			logger.V(6).Info("error reading event header data", "error", err)
-			continue
-		}
+			// continue reading from perf map until we have all the necessary data
+			for len(data) < int(out.Len) {
+				data = append(data, <-receiveChan...)
+			}
 
-		// continue reading from perf map until we have all the necessary data
-		for len(data) < int(out.Len) {
-			data = append(data, <-evtDataCh...)
-		}
-
-		// ignore this syscall if it is from this program
-		selfPidMutex.RLock()
-		if selfPid[int(out.Tid)] {
+			// ignore this syscall if it is from this program
+			selfPidMutex.RLock()
+			if selfPid[int(out.Tid)] {
+				selfPidMutex.RUnlock()
+				continue
+			}
 			selfPidMutex.RUnlock()
-			continue
-		}
-		selfPidMutex.RUnlock()
 
-		data = data[binary.Size(out):]
-		newdata := make([]byte, len(data))
-		copy(newdata, data)
+			data = data[binary.Size(out):]
+			newdata := make([]byte, len(data))
+			copy(newdata, data)
 
-		parseCh <- &rawSyscallData{
-			perfEventHeader: out,
-			data:            newdata,
+			parseRawSyscallData(out, newdata, opaQueryCh)
+		case data := <-lostChan:
+			logger.V(6).Info("lost events", "count", data)
 		}
 	}
 }
