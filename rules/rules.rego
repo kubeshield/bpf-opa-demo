@@ -126,13 +126,18 @@ launch_remote_file_copy_tool_in_container {
 
 }
 
+enable_create_hidden_file_or_directory { false }
+
 create_hidden_file_or_directory = input {
+	enable_create_hidden_file_or_directory
 	rename_to_hidden_file
 }
 create_hidden_file_or_directory = input {
+	enable_create_hidden_file_or_directory
 	mkdir_hidden_directory
 }
 create_hidden_file_or_directory = input {
+	enable_create_hidden_file_or_directory
 	create_hidden_file
 }
 
@@ -162,9 +167,11 @@ clear_log_activities = input {
 }
 
 search_private_key_or_password = input {
+	not input.process.name == "systemd"
 	search_private_key
 }
 search_private_key_or_password = input {
+	not input.process.name == "systemd"
 	search_password
 }
 
