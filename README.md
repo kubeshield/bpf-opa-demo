@@ -1,4 +1,4 @@
-[![Go Report Card](https://goreportcard.com/badge/go.kubeshield.dev/bpf-opa-demo)](https://goreportcard.com/report/go.kubeshield.dev/bpf-opa-demo)
+[![Go Report Card](https://goreportcard.com/badge/kubeshield.dev/bpf-opa-demo)](https://goreportcard.com/report/kubeshield.dev/bpf-opa-demo)
 [![Build Status](https://github.com/kubeshield/bpf-opa-demo/workflows/CI/badge.svg)](https://github.com/kubeshield/bpf-opa-demo/actions?workflow=CI)
 [![Slack](https://slack.appscode.com/badge.svg)](https://slack.appscode.com)
 [![Twitter](https://img.shields.io/twitter/follow/kubeshield.svg?style=social&logo=twitter&label=Follow)](https://twitter.com/intent/follow?screen_name=Kubeshield)

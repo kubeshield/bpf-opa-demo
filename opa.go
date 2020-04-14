@@ -27,7 +27,7 @@ import (
 	"os/user"
 	"sync"
 
-	"go.kubeshield.dev/bpf-opa-demo/rules"
+	"kubeshield.dev/bpf-opa-demo/rules"
 
 	"github.com/the-redback/go-oneliners"
 	v1 "k8s.io/api/core/v1"

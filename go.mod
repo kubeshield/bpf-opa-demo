@@ -1,4 +1,4 @@
-module go.kubeshield.dev/bpf-opa-demo
+module kubeshield.dev/bpf-opa-demo
 
 go 1.12
 
