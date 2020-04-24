@@ -29,7 +29,7 @@ import (
 	"syscall"
 	"unsafe"
 
-	"go.kubeshield.dev/bpf-opa-demo/bpf"
+	"kubeshield.dev/bpf-opa-demo/bpf"
 
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
