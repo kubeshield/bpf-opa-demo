@@ -29,14 +29,13 @@ import (
 	"syscall"
 	"unsafe"
 
-	"kubeshield.dev/bpf-opa-demo/bpf"
-
 	"github.com/iovisor/gobpf/elf"
 	"github.com/iovisor/gobpf/pkg/cpuonline"
 	"github.com/pkg/errors"
 	"github.com/prometheus/procfs"
 	"k8s.io/klog"
 	"k8s.io/klog/klogr"
+	"kubeshield.dev/bpf-opa-demo/bpf"
 )
 
 type perfEventHeader struct {
