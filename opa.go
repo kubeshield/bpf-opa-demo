@@ -27,10 +27,9 @@ import (
 	"os/user"
 	"sync"
 
-	"kubeshield.dev/bpf-opa-demo/rules"
-
 	"github.com/the-redback/go-oneliners"
 	v1 "k8s.io/api/core/v1"
+	"kubeshield.dev/bpf-opa-demo/rules"
 )
 
 type opaRequest struct {
