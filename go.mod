@@ -9,6 +9,7 @@ require (
 	github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect
 	github.com/iovisor/gobpf v0.0.0-00010101000000-000000000000
+	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-colorable v0.1.2 // indirect
 	github.com/pkg/errors v0.8.1
 	github.com/prometheus/procfs v0.0.8
