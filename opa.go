@@ -22,7 +22,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os/user"
 	"sync"
@@ -176,7 +175,7 @@ func callOpaAPI(method, url string, body io.Reader) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	b, err := ioutil.ReadAll(resp.Body)
+	b, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Error(err, "failed to read response body")
 		return nil, err
