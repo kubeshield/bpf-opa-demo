@@ -6,7 +6,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/go-logr/logr v0.1.0
-	github.com/gogo/protobuf v1.2.2-0.20190730201129-28a6bbf47e48 // indirect
+	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/hokaccha/go-prettyjson v0.0.0-20190818114111-108c894c2c0e // indirect
 	github.com/iovisor/gobpf v0.0.0-00010101000000-000000000000
 	github.com/json-iterator/go v1.1.12 // indirect
@@ -15,7 +15,6 @@ require (
 	github.com/prometheus/procfs v0.0.8
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/the-redback/go-oneliners v0.0.0-20190417084731-74f7694e6dae
-	golang.org/x/sys v0.0.0-20190801041406-cbf593c0f2f3 // indirect
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833 // indirect
 	k8s.io/apimachinery v0.16.5-beta.1
