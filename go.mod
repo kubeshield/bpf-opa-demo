@@ -15,7 +15,7 @@ require (
 	github.com/prometheus/procfs v0.0.8
 	github.com/stretchr/testify v1.4.0 // indirect
 	github.com/the-redback/go-oneliners v0.0.0-20190417084731-74f7694e6dae
-	golang.org/x/sys v0.0.0-20190801041406-cbf593c0f2f3 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	k8s.io/api v0.0.0-20191114100352-16d7abae0d2a
 	k8s.io/apiextensions-apiserver v0.0.0-20191114105449-027877536833 // indirect
 	k8s.io/apimachinery v0.16.5-beta.1
